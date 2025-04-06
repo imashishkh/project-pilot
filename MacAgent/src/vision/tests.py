@@ -174,11 +174,23 @@ class TestScreenCapture(unittest.TestCase):
         self.assertIsInstance(screenshot, np.ndarray)
         self.assertEqual(len(screenshot.shape), 3)
         
-        # Check dimensions
-        # Note: There can sometimes be a slight mismatch in dimensions due to
-        # scaling or OS constraints, so we check approximately
-        self.assertAlmostEqual(screenshot.shape[1], region[2], delta=5)
-        self.assertAlmostEqual(screenshot.shape[0], region[3], delta=5)
+        # Calculate display scaling factor (Retina displays often use 2x scaling)
+        # This is determined by comparing the captured image size to the requested region size
+        width_scaling = screenshot.shape[1] / region[2]
+        height_scaling = screenshot.shape[0] / region[3]
+        
+        # Check dimensions allowing for scaling
+        # For Retina displays, scaling is often 2x, so we'll check within a reasonable range
+        # If the scaling is close to an integer value (1x, 2x, etc.), we'll consider it correct
+        acceptable_scaling_factors = [1.0, 2.0]  # Common scaling factors
+        
+        is_width_acceptable = any(abs(width_scaling - factor) < 0.1 for factor in acceptable_scaling_factors)
+        is_height_acceptable = any(abs(height_scaling - factor) < 0.1 for factor in acceptable_scaling_factors)
+        
+        self.assertTrue(is_width_acceptable, 
+                      f"Width scaling factor {width_scaling} not close to expected values {acceptable_scaling_factors}")
+        self.assertTrue(is_height_acceptable, 
+                      f"Height scaling factor {height_scaling} not close to expected values {acceptable_scaling_factors}")
         
         # Save the screenshot for inspection
         cv2.imwrite(str(self.output_dir / "region.png"), screenshot)
@@ -186,6 +198,7 @@ class TestScreenCapture(unittest.TestCase):
         logger.info(f"Region capture took {elapsed*1000:.2f} ms, "
                     f"region: {region}, "
                     f"resolution: {screenshot.shape[1]}x{screenshot.shape[0]}")
+        logger.info(f"Detected scaling factors: width={width_scaling:.2f}x, height={height_scaling:.2f}x")
     
     def test_capture_modes(self):
         """Test different capture modes (quartz vs mss)."""

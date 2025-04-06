@@ -125,6 +125,10 @@ class AgentLoop:
             click_delay=self.config.click_delay
         )
         
+        # Enable debug mode for troubleshooting
+        self.action.set_debug_mode(True)
+        logger.info("Debug mode enabled for troubleshooting")
+        
         self.planning = PlanningModule()
         
         memory_dir = self.config.memory_dir
