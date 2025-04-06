@@ -29,6 +29,9 @@ except ImportError:
     class TaskBreakdown:
         pass
 
+# Import parameter filtering function from action module
+from MacAgent.src.core.action import _filter_params
+
 # Set up logging
 logger = logging.getLogger(__name__)
 
@@ -502,11 +505,13 @@ class PlanningModule:
             if "click" in instruction.raw_text.lower():
                 if "coordinates" in params:
                     try:
-                        coords = params["coordinates"].split(",")
-                        x, y = int(coords[0]), int(coords[1])
+                        # Transform coordinates into separate x and y parameters
+                        coords = str(params["coordinates"]).split(",")
+                        x, y = int(coords[0].strip()), int(coords[1].strip())
                         action_type = "click_at"
                         params = {"x": x, "y": y}
-                    except:
+                    except Exception as e:
+                        logger.warning(f"Failed to parse coordinates: {e}")
                         action_type = "click"
                         params = {}
                 elif "element" in params or "text" in params:
@@ -523,6 +528,39 @@ class PlanningModule:
             elif "screenshot" in instruction.raw_text.lower():
                 action_type = "take_screenshot"
                 params = {}
+                
+            # Clean up parameters based on action type
+            if action_type == "press_key":
+                # Remove 'location' parameter if present
+                if "location" in params:
+                    del params["location"]
+                
+                # Ensure proper key combination format
+                if "key" not in params and "key_combination" not in params:
+                    if intent_str.lower() == "confirm":
+                        params["key"] = "return"
+                    elif intent_str.lower() == "cancel":
+                        params["key"] = "escape"
+            
+            elif action_type == "click_at":
+                # Ensure x and y are present as separate parameters
+                if "coordinates" in params and ("x" not in params or "y" not in params):
+                    try:
+                        coords = str(params["coordinates"]).split(",")
+                        params["x"] = int(coords[0].strip())
+                        params["y"] = int(coords[1].strip())
+                    except Exception:
+                        pass
+                    # Remove the original coordinates parameter
+                    if "coordinates" in params:
+                        del params["coordinates"]
+            
+            elif action_type == "type_text":
+                # Ensure text parameter is present and is a string
+                if "text" in params:
+                    params = {"text": str(params["text"])}
+                else:
+                    params = {"text": ""}
                 
         except Exception as e:
             logger.error(f"Error converting instruction to action: {e}")
@@ -545,7 +583,16 @@ class PlanningModule:
         try:
             handler = self.action_handlers.get(step.action_type)
             if handler:
-                result = await handler(**step.params)
+                # Filter parameters to match handler's signature
+                filtered_params = await _filter_params(handler, step.params)
+                
+                # Log if parameters were filtered out
+                if set(filtered_params.keys()) != set(step.params.keys()):
+                    removed_params = set(step.params.keys()) - set(filtered_params.keys())
+                    logger.warning(f"Filtered out incompatible parameters for step {step.step_id}: {removed_params}")
+                
+                # Call handler with filtered parameters
+                result = await handler(**filtered_params)
                 step.mark_completed(result)
             else:
                 step.mark_failed(f"No handler registered for action type: {step.action_type}")

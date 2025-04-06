@@ -6,6 +6,7 @@ This module provides real-time feedback about agent actions and decisions.
 
 import os
 import logging
+import time
 from enum import Enum, auto
 from typing import List, Dict, Optional, Any, Tuple
 
@@ -397,7 +398,6 @@ class FeedbackSystem(QWidget):
     
     def _get_timestamp(self) -> int:
         """Get current timestamp in milliseconds."""
-        import time
         return int(time.time() * 1000)
     
     def clear_log(self):

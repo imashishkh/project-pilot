@@ -93,3 +93,4 @@
 2025-04-06 20:34:13,026 - MacAgent.src.core.planning - ERROR - Plan e6a85eca-20ac-4c7e-93c9-2dcdd3ca2ae4 failed after 2.45s
 2025-04-06 20:34:13,026 - MacAgent.src.core.agent - INFO - Plan for 'open settings ' failed
 2025-04-06 20:34:13,026 - MacAgent.src.core.agent - ERROR - Step failed: The settings icon is usually a gear or slider symbol. On a computer, it may be located in the start menu or system tray. On a mobile device, it is typically on the home screen or in the app drawer., Error: Unknown error
+2025-04-06 21:38:25,397 - MacAgent.src.core.agent - INFO - Received shutdown signal 2, stopping agent loop
