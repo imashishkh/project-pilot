@@ -1,0 +1,10 @@
+2025-04-06 18:14:34,384 - MacAgent.src.core.agent - INFO - Logging to file: logs/macagent_20250406_181434.log
+2025-04-06 18:14:34,384 - MacAgent.src.core.agent - INFO - Initializing agent components...
+2025-04-06 18:14:34,384 - MacAgent.src.core.perception - INFO - PerceptionModule initialized
+2025-04-06 18:14:34,385 - MacAgent.src.core.action - INFO - ActionModule initialized
+2025-04-06 18:14:34,385 - MacAgent.src.core.planning - INFO - Initialized PlanningModule
+2025-04-06 18:14:34,385 - MacAgent.src.core.memory - INFO - Memory system using persistent storage at memory
+2025-04-06 18:14:34,385 - MacAgent.src.core.memory - INFO - MemorySystem initialized
+2025-04-06 18:14:34,385 - MacAgent.src.core.agent - INFO - AgentLoop initialized successfully
+2025-04-06 18:14:34,412 - MacAgent.src.ui.main_app - INFO - Applying configuration settings
+2025-04-06 18:14:34,412 - MacAgent.src.ui.main_app - INFO - Setting theme to System Default

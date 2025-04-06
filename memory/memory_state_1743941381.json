@@ -1,0 +1,42 @@
+{
+  "ui_states": {},
+  "recent_actions": [],
+  "observations": {
+    "latest_screenshot": {
+      "timestamp": 1743941381.661249
+    },
+    "screenshot_1743940991": {
+      "timestamp": 1743940991,
+      "has_image": true
+    },
+    "plan_feedback": {
+      "instruction": "Take a screenshot of the desktop",
+      "status": "COMPLETED",
+      "steps_count": 1,
+      "completed_steps": 1,
+      "failed_steps": 0
+    },
+    "action_history": {
+      "timestamp": 1743941381.661261,
+      "recent_actions": [
+        {
+          "type": "take_screenshot",
+          "params": {},
+          "enhanced_params": {
+            "_context": {
+              "timestamp": 1743940990.96811,
+              "instruction": "Take a screenshot of the desktop"
+            }
+          },
+          "result": {
+            "success": true,
+            "key": "screenshot_1743940991"
+          },
+          "timestamp": 1743940991.431969,
+          "duration": 0.4638807773590088
+        }
+      ],
+      "total_actions": 1
+    }
+  }
+}

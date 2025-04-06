@@ -1,0 +1,95 @@
+2025-04-06 20:22:09,583 - MacAgent.src.core.agent - INFO - Logging to file: logs/macagent_20250406_202209.log
+2025-04-06 20:22:09,583 - MacAgent.src.core.agent - INFO - Initializing agent components...
+2025-04-06 20:22:09,583 - MacAgent.src.core.perception - INFO - PerceptionModule initialized
+2025-04-06 20:22:09,592 - MacAgent.src.core.action - INFO - ActionModule initialized
+2025-04-06 20:22:09,596 - MacAgent.src.intelligence.llm_connector - INFO - Loaded API key for openai
+2025-04-06 20:22:09,596 - MacAgent.src.intelligence.llm_connector - INFO - Loaded API key for anthropic
+2025-04-06 20:22:09,596 - MacAgent.src.core.planning - INFO - Initialized InstructionProcessor for advanced NLP capabilities
+2025-04-06 20:22:09,596 - MacAgent.src.core.planning - INFO - Initialized PlanningModule
+2025-04-06 20:22:09,596 - MacAgent.src.core.memory - INFO - Memory system using persistent storage at memory
+2025-04-06 20:22:09,596 - MacAgent.src.core.memory - INFO - MemorySystem initialized
+2025-04-06 20:22:09,596 - MacAgent.src.core.agent - INFO - AgentLoop initialized successfully
+2025-04-06 20:22:23,878 - root - INFO - Processing command: open safari and search google.com
+2025-04-06 20:22:23,879 - MacAgent.src.core.agent - INFO - Processing instruction: open safari and search google.com
+2025-04-06 20:22:23,879 - MacAgent.src.core.planning - INFO - Using InstructionProcessor for advanced instruction parsing
+2025-04-06 20:22:54,769 - MacAgent.src.core.planning - INFO - Created plan with 6 steps using advanced NLP
+2025-04-06 20:22:54,769 - MacAgent.src.core.agent - INFO - Created plan with 6 steps: ['The Safari icon is usually found on the home screen or dock of your device. It resembles a compass.', 'This will open the Safari web browser on your device.', "The address bar is where you can type in a website's URL.", 'This will allow you to type in the website you want to visit.', 'This is the URL for the Google search engine.', 'This will direct the browser to the website you typed in.']
+2025-04-06 20:22:54,769 - MacAgent.src.core.agent - INFO - Agent loop started in background task
+2025-04-06 20:22:54,769 - MacAgent.src.core.agent - INFO - Starting agent loop
+2025-04-06 20:22:56,443 - MacAgent.src.core.agent - INFO - Starting execution of plan: open safari and search google.com
+2025-04-06 20:22:56,444 - MacAgent.src.core.planning - INFO - Started plan f614237f-25da-49c9-8058-32376f85d7be for instruction: open safari and search google.com
+2025-04-06 20:22:56,444 - MacAgent.src.core.memory - INFO - Memory state saved to memory/memory_state_1743951176.json
+2025-04-06 20:22:56,444 - MacAgent.src.core.agent - INFO - Performance stats (ms) - Loop: 1674.68, Perception: 717.77, Planning: 0.00, Memory: 0.28, UI Detection: 492.45
+2025-04-06 20:22:56,444 - MacAgent.src.core.agent - WARNING - Agent loop is running slower than configured rate (actual: 1.675s, target: 0.100s)
+2025-04-06 20:22:57,920 - MacAgent.src.core.agent - INFO - Executing step: The Safari icon is usually found on the home screen or dock of your device. It resembles a compass. (Action: press_key)
+2025-04-06 20:22:57,920 - MacAgent.src.core.agent - INFO - Executing plan step: The Safari icon is usually found on the home screen or dock of your device. It resembles a compass. [press_key]
+2025-04-06 20:22:58,900 - MacAgent.src.core.agent - ERROR - Error executing action press_key: ActionModule.press_key() got an unexpected keyword argument 'location'
+2025-04-06 20:22:58,900 - MacAgent.src.core.planning - ERROR - Failed step 96522364-1761-4166-b0cc-db6ee481a3d9 after 0.00s: The Safari icon is usually found on the home screen or dock of your device. It resembles a compass. - Unknown error
+2025-04-06 20:22:58,900 - MacAgent.src.core.agent - WARNING - Step failed: The Safari icon is usually found on the home screen or dock of your device. It resembles a compass. - Unknown error
+2025-04-06 20:22:58,900 - MacAgent.src.core.agent - INFO - Attempting to recover from step failure: The Safari icon is usually found on the home screen or dock of your device. It resembles a compass.
+2025-04-06 20:22:58,900 - MacAgent.src.core.planning - INFO - Using InstructionProcessor for advanced instruction parsing
+2025-04-06 20:22:59,770 - root - INFO - Processing command: 
+2025-04-06 20:22:59,771 - MacAgent.src.core.agent - INFO - Processing instruction: 
+2025-04-06 20:22:59,771 - MacAgent.src.core.planning - INFO - Using InstructionProcessor for advanced instruction parsing
+2025-04-06 20:23:01,836 - MacAgent.src.intelligence.instruction_processor - WARNING - Could not extract JSON from text
+2025-04-06 20:23:04,805 - MacAgent.src.core.planning - WARNING - Advanced processing failed to break down task, falling back to basic parsing
+2025-04-06 20:23:04,805 - MacAgent.src.core.planning - WARNING - Using fallback for unrecognized instruction: 
+2025-04-06 20:23:04,805 - MacAgent.src.core.planning - INFO - Created plan with 1 steps for instruction: 
+2025-04-06 20:23:04,805 - MacAgent.src.core.agent - INFO - Created plan with 1 steps: ['Process instruction (fallback)']
+2025-04-06 20:23:04,805 - MacAgent.src.core.agent - INFO - Agent loop started in background task
+2025-04-06 20:23:04,805 - MacAgent.src.core.agent - INFO - Starting agent loop
+2025-04-06 20:23:06,238 - MacAgent.src.core.agent - INFO - Starting execution of plan: 
+2025-04-06 20:23:06,238 - MacAgent.src.core.planning - INFO - Started plan 72214478-70e7-4107-aa12-f4b4b2dd9333 for instruction: 
+2025-04-06 20:23:07,714 - MacAgent.src.core.agent - INFO - Executing step: Process instruction (fallback) (Action: unknown)
+2025-04-06 20:23:07,714 - MacAgent.src.core.agent - INFO - Executing plan step: Process instruction (fallback) [unknown]
+2025-04-06 20:23:08,698 - MacAgent.src.core.agent - WARNING - Received unknown action type for instruction: 
+2025-04-06 20:23:09,199 - MacAgent.src.core.planning - ERROR - Failed step e2549df4-30ea-4bf2-ae7d-3f9588d4669e after 0.00s: Process instruction (fallback) - Unknown action type
+2025-04-06 20:23:09,200 - MacAgent.src.core.agent - WARNING - Step failed: Process instruction (fallback) - Unknown action type
+2025-04-06 20:23:09,200 - MacAgent.src.core.agent - INFO - Attempting to recover from step failure: Process instruction (fallback)
+2025-04-06 20:23:09,200 - MacAgent.src.core.planning - INFO - Using InstructionProcessor for advanced instruction parsing
+2025-04-06 20:23:44,925 - root - INFO - Processing command: take a screenshot of the current window on the screen and save it to the desktop 
+2025-04-06 20:23:44,925 - MacAgent.src.core.agent - INFO - Processing instruction: take a screenshot of the current window on the screen and save it to the desktop 
+2025-04-06 20:23:44,925 - MacAgent.src.core.planning - INFO - Using InstructionProcessor for advanced instruction parsing
+2025-04-06 20:23:46,483 - MacAgent.src.intelligence.instruction_processor - WARNING - Could not extract JSON from text
+2025-04-06 20:23:47,504 - MacAgent.src.intelligence.instruction_processor - WARNING - Could not extract JSON from text
+2025-04-06 20:24:08,603 - MacAgent.src.core.planning - INFO - Created plan with 7 steps using advanced NLP
+2025-04-06 20:24:08,603 - MacAgent.src.core.agent - INFO - Created recovery plan with 7 steps
+2025-04-06 20:24:08,603 - MacAgent.src.core.planning - INFO - Started plan 3204febe-519e-4ce4-827f-097baaefc238 for instruction: The action 'The Safari icon is usually found on the home screen or dock of your device. It resembles a compass.' failed with error: Unknown error. Please create a recovery plan to achieve the original goal: open safari and search google.com
+2025-04-06 20:24:08,603 - MacAgent.src.core.planning - ERROR - Plan f614237f-25da-49c9-8058-32376f85d7be failed after 72.16s
+2025-04-06 20:24:08,604 - MacAgent.src.core.agent - INFO - Plan for 'open safari and search google.com' failed
+2025-04-06 20:24:08,604 - MacAgent.src.core.agent - ERROR - Step failed: The Safari icon is usually found on the home screen or dock of your device. It resembles a compass., Error: Unknown error
+2025-04-06 20:24:20,237 - MacAgent.src.core.planning - INFO - Created plan with 7 steps using advanced NLP
+2025-04-06 20:24:20,237 - MacAgent.src.core.agent - INFO - Created plan with 7 steps: ['This step is to make sure that the window you want to capture is open and is the active window on your screen.', "This step is to capture the screenshot of the active window on your screen. The 'Print Screen' key is usually located at the top-right of the keyboard.", 'This step is to open a software where you can paste and save the screenshot you just captured.', 'This step is to paste the screenshot you captured into the photo editing software.', "This step is to open the 'Save As' dialog box where you can choose where to save the screenshot and what to name it.", 'This step is to choose the desktop as the location to save the screenshot and to give the screenshot a name.', 'This step is to save the screenshot to the desktop.']
+2025-04-06 20:24:20,237 - MacAgent.src.core.agent - INFO - Agent loop started in background task
+2025-04-06 20:24:20,237 - MacAgent.src.core.agent - INFO - Starting agent loop
+2025-04-06 20:24:21,712 - MacAgent.src.core.agent - INFO - Starting execution of plan: take a screenshot of the current window on the screen and save it to the desktop 
+2025-04-06 20:24:21,713 - MacAgent.src.core.planning - INFO - Started plan 6c0df5dd-c80f-4a1d-9559-3248a11df873 for instruction: take a screenshot of the current window on the screen and save it to the desktop 
+2025-04-06 20:24:22,392 - MacAgent.src.core.agent - INFO - Executing step: This step is to make sure that the window you want to capture is open and is the active window on your screen. (Action: take_screenshot)
+2025-04-06 20:24:22,393 - MacAgent.src.core.agent - INFO - Executing plan step: This step is to make sure that the window you want to capture is open and is the active window on your screen. [take_screenshot]
+2025-04-06 20:24:22,636 - MacAgent.src.core.planning - INFO - Created plan with 7 steps using advanced NLP
+2025-04-06 20:24:22,636 - MacAgent.src.core.agent - INFO - Created recovery plan with 7 steps
+2025-04-06 20:24:22,636 - MacAgent.src.core.planning - INFO - Started plan 7bcf7751-1d94-456e-8b88-72a0b29df551 for instruction: The action 'Process instruction (fallback)' failed with error: Unknown action type. Please create a recovery plan to achieve the original goal: 
+2025-04-06 20:24:22,636 - MacAgent.src.core.planning - ERROR - Plan 72214478-70e7-4107-aa12-f4b4b2dd9333 failed after 76.40s
+2025-04-06 20:24:22,636 - MacAgent.src.core.agent - INFO - Plan for '' failed
+2025-04-06 20:24:22,636 - MacAgent.src.core.agent - ERROR - Step failed: Process instruction (fallback), Error: Unknown action type
+2025-04-06 20:24:23,604 - MacAgent.src.core.agent - INFO - Taking screenshot
+2025-04-06 20:24:24,400 - MacAgent.src.core.agent - INFO - Step completed successfully: This step is to make sure that the window you want to capture is open and is the active window on your screen.
+2025-04-06 20:33:51,851 - root - INFO - Processing command: open settings 
+2025-04-06 20:33:51,851 - MacAgent.src.core.agent - INFO - Processing instruction: open settings 
+2025-04-06 20:33:51,851 - MacAgent.src.core.planning - INFO - Using InstructionProcessor for advanced instruction parsing
+2025-04-06 20:34:10,295 - MacAgent.src.core.planning - INFO - Created plan with 2 steps using advanced NLP
+2025-04-06 20:34:10,295 - MacAgent.src.core.agent - INFO - Created plan with 2 steps: ['The settings icon is usually a gear or slider symbol. On a computer, it may be located in the start menu or system tray. On a mobile device, it is typically on the home screen or in the app drawer.', 'This will open the settings menu where you can adjust various options for your device.']
+2025-04-06 20:34:10,295 - MacAgent.src.core.agent - INFO - Agent loop started in background task
+2025-04-06 20:34:10,575 - MacAgent.src.core.agent - INFO - Starting execution of plan: open settings 
+2025-04-06 20:34:10,575 - MacAgent.src.core.planning - INFO - Started plan e6a85eca-20ac-4c7e-93c9-2dcdd3ca2ae4 for instruction: open settings 
+2025-04-06 20:34:10,828 - MacAgent.src.core.agent - INFO - Executing step: The settings icon is usually a gear or slider symbol. On a computer, it may be located in the start menu or system tray. On a mobile device, it is typically on the home screen or in the app drawer. (Action: press_key)
+2025-04-06 20:34:10,828 - MacAgent.src.core.agent - INFO - Executing plan step: The settings icon is usually a gear or slider symbol. On a computer, it may be located in the start menu or system tray. On a mobile device, it is typically on the home screen or in the app drawer. [press_key]
+2025-04-06 20:34:10,828 - MacAgent.src.core.agent - INFO - Starting agent loop
+2025-04-06 20:34:12,743 - MacAgent.src.core.agent - ERROR - Error executing action press_key: ActionModule.press_key() got an unexpected keyword argument 'location'
+2025-04-06 20:34:12,743 - MacAgent.src.core.planning - ERROR - Failed step bf7cf525-e5cc-43cb-9345-c5f97193cb64 after 0.00s: The settings icon is usually a gear or slider symbol. On a computer, it may be located in the start menu or system tray. On a mobile device, it is typically on the home screen or in the app drawer. - Unknown error
+2025-04-06 20:34:12,743 - MacAgent.src.core.agent - WARNING - Step failed: The settings icon is usually a gear or slider symbol. On a computer, it may be located in the start menu or system tray. On a mobile device, it is typically on the home screen or in the app drawer. - Unknown error
+2025-04-06 20:34:12,743 - MacAgent.src.core.agent - INFO - Attempting to recover from step failure: The settings icon is usually a gear or slider symbol. On a computer, it may be located in the start menu or system tray. On a mobile device, it is typically on the home screen or in the app drawer.
+2025-04-06 20:34:12,743 - MacAgent.src.core.planning - INFO - Using InstructionProcessor for advanced instruction parsing
+2025-04-06 20:34:13,026 - MacAgent.src.core.planning - ERROR - Plan e6a85eca-20ac-4c7e-93c9-2dcdd3ca2ae4 failed after 2.45s
+2025-04-06 20:34:13,026 - MacAgent.src.core.agent - INFO - Plan for 'open settings ' failed
+2025-04-06 20:34:13,026 - MacAgent.src.core.agent - ERROR - Step failed: The settings icon is usually a gear or slider symbol. On a computer, it may be located in the start menu or system tray. On a mobile device, it is typically on the home screen or in the app drawer., Error: Unknown error

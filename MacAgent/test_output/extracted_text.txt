@@ -1,0 +1,59 @@
+@ Cursor File Edit Selection View Go Run Terminal Window Help * © @&@ BB W © FQ S ®@ Sat5Apr 6:16PM
+OOO ® Manus x €) Medusa x | O Architee x | €) imashis x | ©) YouTub: x | (©) TheFas x | Broker! Xx | 2%] [Previey x | €) imashis x | Couldy x | fig Gemini x | A OpenAr x | @ Custom x | @ Askult x | @ Overvie x | + v
+oii” Seneeaeaee —-
+e e €>5 2 Macdgent Ded
+QO 9 & Bev @ _init_.py U X  @ screen_capture.py U ® test_screen_capture.py MacAgent/... U @ test_screen_capture.py tests 1, U ®@ tests.py U @imagepre PY D HY OO: File Structure Creation Instructions + De xX
+\ MACAGENT MacAgent > src > vision > @ __init__.py > ... ® text_recognition.py +19 « xvec
+> logs 0 1 nin ; ;
+een . 2 Vision module for MacAgent. def —init_(self, text: str, box: Tuple[int, i
+3
+Y config 4 This module provides screen capture and analysis capabilities for the MacAgent system, Initialize a) text match.
+> docs 5 enabling it to perceive and interpret the Mac UI environment. a
+> resources 6 ene cS
+text: The matched text
+Ves 7 box: Bounding box coordinates of the ma}
+> core ° 8 from .screen_capture import ScreenCapture . 9 , be eee
+9 from .screen_analyzer import ScreenAnalyzer Wa
+> intelligence 10
+> interaction 11 _all_=[ vu let's update the test script to use the new TextMatch
+class:
+> utils 12 "ScreenCapture',
+Y vision 13 ; "ScreenAnalyzer', ® test_text_recognition.py +1 -1 ° xXx vc
+14
+: > —pycache__ v 15 format='%(asctime)s - %(name)s |
+> models
+@ __init_.py U from src.vision.screen_capture import ScreenCapture
+® image_processor... 1, U from src.vision.text_recognition import TextRecognij
+~ ‘ from src.vision.text_recognition import TextRecognij
+® screen_analyzer.py U
+@ screen_capture.py U def test_text_recognition():
+® tests.py U # Create output directory if it doesn't exist
+@ text_recognition.py U
+\ test_output e Let's run our test script one more time:
+adaptive_thresh.png  U cd /Users/ashish/Projects/MacAgent/
+"3 bilateral_blur.png U MacAgent && python tests/
+"a. binary_thresh.png U test_text_recognition. py
+ine
+2 buttons_enhanced.p... U . . 2025-04-05 18:16:55,084 - src.vision.screen_capture
+[ canny_edges.png U Review next file
+"aa checkboxes_enhanc... U 1 Pop out terminal Cancel >
+"2 clahe_enhanced.png U Problems 2 Output DebugConsole Terminal Ports  GitLens cd /Users/ashish/Projects/MacAgent/MacAgent && python -c "import pytesseract; help(pytesseract.image_to_data)" +» (J fi} -- “«~
+a
+=: closed.png U Help on function image_to_data in module pytesseract.pytesseract: A
+fa dilated.png U
+= image_to_data( A |
+a eroded.png U image, |
+= lang=None = -
+= extracted_text.txt U confige’ > Generating... Stop Accept all #2
+‘a. found_button.png U nice=0, |
+2 found_file.png U output_type='string', u @ Add context
+— timeout=0, , .
+"2. gaussian_blur.png U pandas_config=None Plan, search, build anything
+)
+> NOTEPADS Returns string containing box boundaries, confidences, co Agent #1 ~ & claude-3.7-sonnet Gy)
+> OUTLINE and other information. Requires Tesseract 3.05+
+> TIMELINE Help on image_to_data line 1/13 (END) (press h for help or q to quit) stanbe neva chat ion bation results Now chat
+Sul i? master* @ fle s7o% Launchpad @OA2 WO {K/)Kodezi Ln1,Col1 Spaces:4 UTF-8 LF {% Python 3.13.2 ('venv':venv) @ GoLive CursorTab @Prettier O
+_— ) & =O oe Le av 438) @ Kt
+9 | z _- o— aaa) ' ‘ “ 1 :
+© a Pitre! fare =

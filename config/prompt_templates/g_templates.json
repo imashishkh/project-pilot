@@ -1,0 +1,34 @@
+[
+  {
+    "name": "general_assistant",
+    "template": "As a helpful AI assistant, please {task}. Consider the following context: {context}",
+    "strategy": "zero_shot",
+    "description": "Basic template for general assistant tasks",
+    "version": "1.0",
+    "tags": ["general", "assistant"],
+    "examples": [
+      {
+        "task": "explain the concept of recursion in programming",
+        "context": "The user is a beginner programmer"
+      }
+    ],
+    "max_tokens": 1024
+  },
+  {
+    "name": "generate_code",
+    "template": "Generate {language} code to {task}.\n\nRequirements:\n{requirements}\n\nAdditional notes: {notes}",
+    "strategy": "chain_of_thought",
+    "description": "Template for code generation tasks",
+    "version": "1.0",
+    "tags": ["code", "programming"],
+    "examples": [
+      {
+        "language": "Python",
+        "task": "create a function that sorts a list of dictionaries by a specified key",
+        "requirements": "- The function should take a list of dictionaries and a key name\n- It should handle missing keys gracefully\n- It should return a new sorted list",
+        "notes": "Prefer using built-in Python functions when possible."
+      }
+    ],
+    "max_tokens": 2048
+  }
+] 

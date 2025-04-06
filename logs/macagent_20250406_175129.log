@@ -1,0 +1,30 @@
+2025-04-06 17:51:29,426 - MacAgent.src.core.agent - INFO - Logging to file: logs/macagent_20250406_175129.log
+2025-04-06 17:51:29,426 - MacAgent.src.core.agent - INFO - Initializing agent components...
+2025-04-06 17:51:29,426 - MacAgent.src.core.perception - INFO - PerceptionModule initialized
+2025-04-06 17:51:29,432 - MacAgent.src.core.action - INFO - ActionModule initialized
+2025-04-06 17:51:29,432 - MacAgent.src.core.planning - INFO - Initialized PlanningModule
+2025-04-06 17:51:29,432 - MacAgent.src.core.memory - INFO - Memory system using persistent storage at memory
+2025-04-06 17:51:29,432 - MacAgent.src.core.memory - INFO - MemorySystem initialized
+2025-04-06 17:51:29,432 - MacAgent.src.core.agent - INFO - AgentLoop initialized successfully
+2025-04-06 17:51:50,140 - root - INFO - Processing command: open the finder app and inside the downloads folder open the first file 
+2025-04-06 17:51:50,140 - MacAgent.src.core.agent - INFO - Processing instruction: open the finder app and inside the downloads folder open the first file 
+2025-04-06 17:51:50,140 - MacAgent.src.core.planning - INFO - Created plan with 1 steps for instruction: open the finder app and inside the downloads folder open the first file 
+2025-04-06 17:51:50,140 - MacAgent.src.core.agent - INFO - Created plan with 1 steps: ['Process instruction: open the finder app and inside the downloads folder open the first file ']
+2025-04-06 17:51:50,140 - MacAgent.src.core.agent - INFO - Agent loop started in background task
+2025-04-06 17:51:50,141 - MacAgent.src.core.agent - INFO - Starting agent loop
+2025-04-06 17:51:51,613 - MacAgent.src.core.agent - INFO - Starting execution of plan: open the finder app and inside the downloads folder open the first file 
+2025-04-06 17:51:51,613 - MacAgent.src.core.planning - INFO - Started plan d8d58400-9fb9-4e6a-bce7-d15814cc00ab for instruction: open the finder app and inside the downloads folder open the first file 
+2025-04-06 17:51:51,614 - MacAgent.src.core.memory - INFO - Memory state saved to memory/memory_state_1743942111.json
+2025-04-06 17:51:51,614 - MacAgent.src.core.agent - INFO - Performance stats (ms) - Loop: 1472.99, Perception: 618.30, Planning: 0.00, Memory: 0.33, UI Detection: 424.73
+2025-04-06 17:51:51,614 - MacAgent.src.core.agent - WARNING - Agent loop is running slower than configured rate (actual: 1.473s, target: 0.100s)
+2025-04-06 17:51:52,974 - MacAgent.src.core.agent - INFO - Executing plan step: Process instruction: open the finder app and inside the downloads folder open the first file  [unknown]
+2025-04-06 17:51:53,920 - MacAgent.src.core.agent - WARNING - Received unknown action type for instruction: open the finder app and inside the downloads folder open the first file 
+2025-04-06 17:51:54,422 - MacAgent.src.core.planning - ERROR - Failed step 0d509545-61db-497a-90bb-3149e70f9ab8 after 0.00s: Process instruction: open the finder app and inside the downloads folder open the first file  - Unknown action type
+2025-04-06 17:51:54,422 - MacAgent.src.core.agent - WARNING - Step failed: Process instruction: open the finder app and inside the downloads folder open the first file  - Unknown action type
+2025-04-06 17:51:54,422 - MacAgent.src.core.agent - INFO - Attempting to recover from step failure: Process instruction: open the finder app and inside the downloads folder open the first file 
+2025-04-06 17:51:54,422 - MacAgent.src.core.planning - INFO - Created plan with 1 steps for instruction: The action 'Process instruction: open the finder app and inside the downloads folder open the first file ' failed with error: Unknown action type. Please create a recovery plan to achieve the original goal: open the finder app and inside the downloads folder open the first file 
+2025-04-06 17:51:54,422 - MacAgent.src.core.agent - INFO - Created recovery plan with 1 steps
+2025-04-06 17:51:54,422 - MacAgent.src.core.planning - INFO - Started plan 5f3e3d8c-8ee8-4a60-8a35-b9d1f620b418 for instruction: The action 'Process instruction: open the finder app and inside the downloads folder open the first file ' failed with error: Unknown action type. Please create a recovery plan to achieve the original goal: open the finder app and inside the downloads folder open the first file 
+2025-04-06 17:51:54,422 - MacAgent.src.core.planning - ERROR - Plan d8d58400-9fb9-4e6a-bce7-d15814cc00ab failed after 2.81s
+2025-04-06 17:51:54,422 - MacAgent.src.core.agent - INFO - Plan for 'open the finder app and inside the downloads folder open the first file ' failed
+2025-04-06 18:11:04,387 - MacAgent.src.core.agent - INFO - Received shutdown signal 2, stopping agent loop

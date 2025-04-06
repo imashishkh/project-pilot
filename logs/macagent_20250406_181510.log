@@ -1,0 +1,90 @@
+2025-04-06 18:15:10,666 - MacAgent.src.core.agent - INFO - Logging to file: logs/macagent_20250406_181510.log
+2025-04-06 18:15:10,666 - MacAgent.src.core.agent - INFO - Initializing agent components...
+2025-04-06 18:15:10,666 - MacAgent.src.core.perception - INFO - PerceptionModule initialized
+2025-04-06 18:15:10,681 - MacAgent.src.core.action - INFO - ActionModule initialized
+2025-04-06 18:15:10,681 - MacAgent.src.core.planning - INFO - Initialized PlanningModule
+2025-04-06 18:15:10,681 - MacAgent.src.core.memory - INFO - Memory system using persistent storage at memory
+2025-04-06 18:15:10,681 - MacAgent.src.core.memory - INFO - MemorySystem initialized
+2025-04-06 18:15:10,681 - MacAgent.src.core.agent - INFO - AgentLoop initialized successfully
+2025-04-06 18:15:29,263 - root - INFO - Processing command: Open safari and search google.com
+2025-04-06 18:15:29,263 - MacAgent.src.core.agent - INFO - Processing instruction: Open safari and search google.com
+2025-04-06 18:15:29,263 - MacAgent.src.core.planning - WARNING - Using fallback for unrecognized instruction: Open safari and search google.com
+2025-04-06 18:15:29,263 - MacAgent.src.core.planning - INFO - Created plan with 1 steps for instruction: Open safari and search google.com
+2025-04-06 18:15:29,263 - MacAgent.src.core.agent - INFO - Created plan with 1 steps: ['Process instruction (fallback)']
+2025-04-06 18:15:29,263 - MacAgent.src.core.agent - INFO - Agent loop started in background task
+2025-04-06 18:15:29,264 - MacAgent.src.core.agent - INFO - Starting agent loop
+2025-04-06 18:15:30,972 - MacAgent.src.core.agent - INFO - Starting execution of plan: Open safari and search google.com
+2025-04-06 18:15:30,973 - MacAgent.src.core.planning - INFO - Started plan 9a6fc306-c14c-45c0-accb-1f37ed8ff650 for instruction: Open safari and search google.com
+2025-04-06 18:15:30,973 - MacAgent.src.core.memory - INFO - Memory state saved to memory/memory_state_1743943530.json
+2025-04-06 18:15:30,973 - MacAgent.src.core.agent - INFO - Performance stats (ms) - Loop: 1709.59, Perception: 791.20, Planning: 0.00, Memory: 0.46, UI Detection: 501.30
+2025-04-06 18:15:30,973 - MacAgent.src.core.agent - WARNING - Agent loop is running slower than configured rate (actual: 1.710s, target: 0.100s)
+2025-04-06 18:15:32,415 - MacAgent.src.core.agent - INFO - Executing step: Process instruction (fallback) (Action: unknown)
+2025-04-06 18:15:32,416 - MacAgent.src.core.agent - INFO - Executing plan step: Process instruction (fallback) [unknown]
+2025-04-06 18:15:33,404 - MacAgent.src.core.agent - WARNING - Received unknown action type for instruction: Open safari and search google.com
+2025-04-06 18:15:33,905 - MacAgent.src.core.planning - ERROR - Failed step 6aab3a9b-5955-4da6-b52c-8b2cc673e097 after 0.00s: Process instruction (fallback) - Unknown action type
+2025-04-06 18:15:33,905 - MacAgent.src.core.agent - WARNING - Step failed: Process instruction (fallback) - Unknown action type
+2025-04-06 18:15:33,905 - MacAgent.src.core.agent - INFO - Attempting to recover from step failure: Process instruction (fallback)
+2025-04-06 18:15:33,906 - MacAgent.src.core.planning - INFO - Created plan with 1 steps for instruction: The action 'Process instruction (fallback)' failed with error: Unknown action type. Please create a recovery plan to achieve the original goal: Open safari and search google.com
+2025-04-06 18:15:33,906 - MacAgent.src.core.agent - INFO - Created recovery plan with 1 steps
+2025-04-06 18:15:33,906 - MacAgent.src.core.planning - INFO - Started plan 45926688-904b-4857-911c-0faf7b08ad5c for instruction: The action 'Process instruction (fallback)' failed with error: Unknown action type. Please create a recovery plan to achieve the original goal: Open safari and search google.com
+2025-04-06 18:15:33,906 - MacAgent.src.core.planning - ERROR - Plan 9a6fc306-c14c-45c0-accb-1f37ed8ff650 failed after 2.93s
+2025-04-06 18:15:33,906 - MacAgent.src.core.agent - INFO - Plan for 'Open safari and search google.com' failed
+2025-04-06 18:15:33,906 - MacAgent.src.core.agent - ERROR - Step failed: Process instruction (fallback), Error: Unknown action type
+2025-04-06 18:16:33,827 - root - INFO - Processing command: Hello 
+2025-04-06 18:16:33,827 - MacAgent.src.core.agent - INFO - Processing instruction: Hello 
+2025-04-06 18:16:33,828 - MacAgent.src.core.planning - WARNING - Using fallback for unrecognized instruction: Hello 
+2025-04-06 18:16:33,828 - MacAgent.src.core.planning - INFO - Created plan with 1 steps for instruction: Hello 
+2025-04-06 18:16:33,828 - MacAgent.src.core.agent - INFO - Created plan with 1 steps: ['Process instruction (fallback)']
+2025-04-06 18:16:33,828 - MacAgent.src.core.agent - INFO - Agent loop started in background task
+2025-04-06 18:16:33,828 - MacAgent.src.core.agent - INFO - Starting agent loop
+2025-04-06 18:16:34,844 - MacAgent.src.core.agent - INFO - Starting execution of plan: Hello 
+2025-04-06 18:16:34,845 - MacAgent.src.core.planning - INFO - Started plan 01db14e2-0d80-4d77-9bbb-814174bfc0bf for instruction: Hello 
+2025-04-06 18:16:35,063 - MacAgent.src.core.agent - INFO - Executing step: Process instruction (fallback) (Action: unknown)
+2025-04-06 18:16:35,063 - MacAgent.src.core.agent - INFO - Executing plan step: Process instruction (fallback) [unknown]
+2025-04-06 18:16:36,055 - MacAgent.src.core.agent - WARNING - Received unknown action type for instruction: Hello 
+2025-04-06 18:16:36,273 - MacAgent.src.core.agent - INFO - Executing step: Process instruction (fallback) (Action: unknown)
+2025-04-06 18:16:36,273 - MacAgent.src.core.agent - INFO - Executing plan step: Process instruction (fallback) [unknown]
+2025-04-06 18:16:36,764 - MacAgent.src.core.planning - ERROR - Failed step 2d634739-59e0-4b69-a3c3-99e39be348f1 after 0.00s: Process instruction (fallback) - Unknown action type
+2025-04-06 18:16:36,764 - MacAgent.src.core.agent - WARNING - Step failed: Process instruction (fallback) - Unknown action type
+2025-04-06 18:16:36,764 - MacAgent.src.core.agent - INFO - Attempting to recover from step failure: Process instruction (fallback)
+2025-04-06 18:16:36,765 - MacAgent.src.core.planning - INFO - Created plan with 1 steps for instruction: The action 'Process instruction (fallback)' failed with error: Unknown action type. Please create a recovery plan to achieve the original goal: Hello 
+2025-04-06 18:16:36,765 - MacAgent.src.core.agent - INFO - Created recovery plan with 1 steps
+2025-04-06 18:16:36,765 - MacAgent.src.core.planning - INFO - Started plan a3e74d67-6216-44fa-833c-a1841a46458d for instruction: The action 'Process instruction (fallback)' failed with error: Unknown action type. Please create a recovery plan to achieve the original goal: Hello 
+2025-04-06 18:16:36,765 - MacAgent.src.core.planning - ERROR - Plan 01db14e2-0d80-4d77-9bbb-814174bfc0bf failed after 1.92s
+2025-04-06 18:16:36,765 - MacAgent.src.core.agent - INFO - Plan for 'Hello ' failed
+2025-04-06 18:16:36,765 - MacAgent.src.core.agent - ERROR - Step failed: Process instruction (fallback), Error: Unknown action type
+2025-04-06 18:16:37,498 - MacAgent.src.core.agent - WARNING - Received unknown action type for instruction: Hello 
+2025-04-06 18:16:38,222 - MacAgent.src.core.planning - ERROR - Failed step 2d634739-59e0-4b69-a3c3-99e39be348f1 after 0.00s: Process instruction (fallback) - Unknown action type
+2025-04-06 18:16:38,222 - MacAgent.src.core.agent - WARNING - Step failed: Process instruction (fallback) - Unknown action type
+2025-04-06 18:16:38,222 - MacAgent.src.core.planning - ERROR - Plan 01db14e2-0d80-4d77-9bbb-814174bfc0bf failed after 3.38s
+2025-04-06 18:16:38,222 - MacAgent.src.core.agent - INFO - Plan for 'Hello ' failed
+2025-04-06 18:16:38,222 - MacAgent.src.core.agent - ERROR - Step failed: Process instruction (fallback), Error: Unknown action type
+2025-04-06 18:16:49,871 - root - INFO - Processing command: open google chrome app 
+2025-04-06 18:16:49,871 - MacAgent.src.core.agent - INFO - Processing instruction: open google chrome app 
+2025-04-06 18:16:49,871 - MacAgent.src.core.planning - INFO - Created plan with 3 steps for instruction: open google chrome app 
+2025-04-06 18:16:49,871 - MacAgent.src.core.agent - INFO - Created plan with 3 steps: ['Open Google Chrome', 'Type application name', 'Press Enter to launch']
+2025-04-06 18:16:49,872 - MacAgent.src.core.agent - INFO - Agent loop started in background task
+2025-04-06 18:16:50,155 - MacAgent.src.core.agent - INFO - Starting agent loop
+2025-04-06 18:16:50,903 - MacAgent.src.core.agent - INFO - Starting execution of plan: open google chrome app 
+2025-04-06 18:16:50,903 - MacAgent.src.core.planning - INFO - Started plan bd433ee6-ca95-4ef8-9298-26ed930c5abf for instruction: open google chrome app 
+2025-04-06 18:16:51,128 - MacAgent.src.core.agent - INFO - Executing step: Open Google Chrome (Action: press_key)
+2025-04-06 18:16:51,128 - MacAgent.src.core.agent - INFO - Executing plan step: Open Google Chrome [press_key]
+2025-04-06 18:16:52,095 - MacAgent.src.core.agent - INFO - Executing step: Open Google Chrome (Action: press_key)
+2025-04-06 18:16:52,095 - MacAgent.src.core.agent - INFO - Executing plan step: Open Google Chrome [press_key]
+2025-04-06 18:16:52,590 - MacAgent.src.core.agent - ERROR - Error executing action press_key: ActionModule.press_key() got an unexpected keyword argument 'key_combination'
+2025-04-06 18:16:52,590 - MacAgent.src.core.planning - ERROR - Failed step 7a85b9ba-d70b-4a23-8293-c980ea5455be after 0.00s: Open Google Chrome - Unknown error
+2025-04-06 18:16:52,590 - MacAgent.src.core.agent - WARNING - Step failed: Open Google Chrome - Unknown error
+2025-04-06 18:16:52,590 - MacAgent.src.core.agent - INFO - Attempting to recover from step failure: Open Google Chrome
+2025-04-06 18:16:52,590 - MacAgent.src.core.planning - INFO - Created plan with 3 steps for instruction: The action 'Open Google Chrome' failed with error: Unknown error. Please create a recovery plan to achieve the original goal: open google chrome app 
+2025-04-06 18:16:52,590 - MacAgent.src.core.agent - INFO - Created recovery plan with 3 steps
+2025-04-06 18:16:52,590 - MacAgent.src.core.planning - INFO - Started plan 291d787e-a8f0-43c1-8417-6d69152ab86a for instruction: The action 'Open Google Chrome' failed with error: Unknown error. Please create a recovery plan to achieve the original goal: open google chrome app 
+2025-04-06 18:16:52,590 - MacAgent.src.core.planning - ERROR - Plan bd433ee6-ca95-4ef8-9298-26ed930c5abf failed after 1.69s
+2025-04-06 18:16:52,590 - MacAgent.src.core.agent - INFO - Plan for 'open google chrome app ' failed
+2025-04-06 18:16:52,590 - MacAgent.src.core.agent - ERROR - Step failed: Open Google Chrome, Error: Unknown error
+2025-04-06 18:16:53,530 - MacAgent.src.core.agent - ERROR - Error executing action press_key: ActionModule.press_key() got an unexpected keyword argument 'key_combination'
+2025-04-06 18:16:53,531 - MacAgent.src.core.planning - ERROR - Failed step 7a85b9ba-d70b-4a23-8293-c980ea5455be after 0.00s: Open Google Chrome - Unknown error
+2025-04-06 18:16:53,531 - MacAgent.src.core.agent - WARNING - Step failed: Open Google Chrome - Unknown error
+2025-04-06 18:16:53,531 - MacAgent.src.core.planning - ERROR - Plan bd433ee6-ca95-4ef8-9298-26ed930c5abf failed after 2.63s
+2025-04-06 18:16:53,531 - MacAgent.src.core.agent - INFO - Plan for 'open google chrome app ' failed
+2025-04-06 18:16:53,531 - MacAgent.src.core.agent - ERROR - Step failed: Open Google Chrome, Error: Unknown error
+2025-04-06 20:21:44,398 - MacAgent.src.core.agent - INFO - Received shutdown signal 2, stopping agent loop
