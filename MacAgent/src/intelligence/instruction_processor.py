@@ -264,6 +264,39 @@ class InstructionProcessor:
         # Extract parameters
         parameters = await self._extract_parameters(text, intent)
         
+        # If this is an EXECUTE intent that relates to an action, validate the parameters
+        if intent == InstructionIntentType.EXECUTE and parameters:
+            # Check if this is an action command
+            action_type = None
+            for param_name in ["action_type", "command"]:
+                if param_name in parameters:
+                    action_value = parameters[param_name].value.lower() if parameters[param_name].value else ""
+                    # Common action types
+                    action_types = ["move_to", "click", "click_at", "drag_to", "type_text", 
+                                    "press_key", "perform_hotkey", "scroll"]
+                    for action in action_types:
+                        if action in action_value:
+                            action_type = action
+                            break
+            
+            # If we identified an action type, validate its parameters
+            if action_type:
+                logger.debug(f"Detected action type: {action_type}")
+                valid_params = self.validate_action_parameters(action_type, parameters)
+                
+                # Replace parameters with validated ones
+                for name, value in valid_params.items():
+                    if name in parameters:
+                        parameters[name].value = value
+                    else:
+                        parameters[name] = Parameter(
+                            name=name,
+                            value=value,
+                            required=True,
+                            data_type="string",
+                            confidence=1.0
+                        )
+        
         # Create instruction object
         instruction = Instruction(
             raw_text=text,
@@ -359,6 +392,25 @@ Return a JSON object with "intent" (one of the categories above) and "confidence
         # Get parameter schema based on intent
         param_schema = self._get_parameter_schema(intent)
         
+        # Enhanced prompt for action parameters
+        action_specific_instructions = ""
+        if intent == InstructionIntentType.EXECUTE:
+            action_specific_instructions = """
+For mouse actions:
+- Extract "x" and "y" for coordinates
+- Use specific parameter names like "start_x", "start_y", "end_x", "end_y" for drag operations
+- For clicks, specify "button" as "left", "right", or "middle" and "clicks" as a number
+- Specify "duration" for movement speed in seconds
+
+For keyboard actions:
+- Extract "key" for single key presses
+- Use "modifiers" as an array of modifier keys (ctrl, shift, alt, cmd)
+- Extract "text" for typing operations
+
+Avoid adding parameters that aren't explicitly mentioned or implied in the instruction.
+If the instruction doesn't specify a parameter value, do not include that parameter.
+"""
+        
         # Build messages for parameter extraction
         messages = [
             {
@@ -367,6 +419,7 @@ Return a JSON object with "intent" (one of the categories above) and "confidence
 For a {intent.value.upper()} instruction, extract these parameters: {json.dumps(param_schema)}.
 Return a JSON object with parameter names as keys and objects with "value", "required", "data_type", and "confidence" fields.
 Only extract parameters that are actually present in the instruction.
+{action_specific_instructions}
 """
             },
             {
@@ -439,7 +492,24 @@ Only extract parameters that are actually present in the instruction.
             },
             InstructionIntentType.EXECUTE: {
                 "command": {"required": True, "data_type": "string", "description": "Command to execute"},
-                "arguments": {"required": False, "data_type": "array", "description": "Command arguments"}
+                "arguments": {"required": False, "data_type": "array", "description": "Command arguments"},
+                # Add action-specific parameters that match expected action method parameters
+                "action_type": {"required": False, "data_type": "string", "description": "Type of action to execute (mouse, keyboard, etc.)"},
+                # Mouse action parameters
+                "x": {"required": False, "data_type": "integer", "description": "X-coordinate for mouse action"},
+                "y": {"required": False, "data_type": "integer", "description": "Y-coordinate for mouse action"},
+                "button": {"required": False, "data_type": "string", "description": "Mouse button to use (left, right, middle)"},
+                "clicks": {"required": False, "data_type": "integer", "description": "Number of clicks to perform"},
+                "duration": {"required": False, "data_type": "number", "description": "Duration of mouse movement"},
+                "interval": {"required": False, "data_type": "number", "description": "Interval between actions"},
+                "start_x": {"required": False, "data_type": "integer", "description": "Starting X-coordinate for drag"},
+                "start_y": {"required": False, "data_type": "integer", "description": "Starting Y-coordinate for drag"},
+                "end_x": {"required": False, "data_type": "integer", "description": "Ending X-coordinate for drag"},
+                "end_y": {"required": False, "data_type": "integer", "description": "Ending Y-coordinate for drag"},
+                # Keyboard action parameters
+                "key": {"required": False, "data_type": "string", "description": "Key to press"},
+                "modifiers": {"required": False, "data_type": "array", "description": "Modifier keys to use (ctrl, shift, alt, cmd)"},
+                "text": {"required": False, "data_type": "string", "description": "Text to type"}
             },
             InstructionIntentType.QUERY: {
                 "question": {"required": True, "data_type": "string", "description": "The question being asked"},
@@ -750,4 +820,63 @@ Context:
         """Clear the instruction cache."""
         self.instruction_cache.clear()
         self.instruction_cache_keys.clear()
-        logger.info("Instruction cache cleared") 
+        logger.info("Instruction cache cleared")
+
+    def validate_action_parameters(self, action_type: str, parameters: Dict[str, Parameter]) -> Dict[str, Any]:
+        """
+        Validate and prepare parameters for action methods.
+        
+        This method checks if the parameters match the expected signatures of action methods
+        and filters out incompatible parameters to prevent parameter mismatches.
+        
+        Args:
+            action_type: Type of action (move_to, click, type_text, etc.)
+            parameters: Dictionary of parameters extracted from instruction
+            
+        Returns:
+            Dictionary of validated parameters suitable for the action method
+        """
+        # Define expected parameters for common action methods
+        expected_params = {
+            "move_to": {"x", "y", "duration"},
+            "click": {"button", "clicks", "interval"},
+            "click_at": {"x", "y", "button", "clicks"},
+            "drag_to": {"start_x", "start_y", "end_x", "end_y", "duration"},
+            "type_text": {"text", "interval"},
+            "press_key": {"key", "modifiers", "key_combination"},
+            "perform_hotkey": {"keys"},
+            "scroll": {"clicks"}
+        }
+        
+        # Get the set of expected parameters for this action type
+        valid_params = expected_params.get(action_type, set())
+        
+        # If we don't recognize the action type, return all parameters
+        if not valid_params:
+            logger.warning(f"Unknown action type: {action_type}, cannot validate parameters")
+            return {name: param.value for name, param in parameters.items()}
+        
+        # Filter parameters to only include those that are valid for this action type
+        filtered_params = {}
+        for name, param in parameters.items():
+            if name in valid_params:
+                filtered_params[name] = param.value
+            else:
+                logger.debug(f"Filtering out parameter '{name}' for action '{action_type}' as it's not in the expected parameter list")
+        
+        # Check for required parameters
+        if action_type == "move_to" and ("x" not in filtered_params or "y" not in filtered_params):
+            logger.warning(f"Missing required parameters for '{action_type}': needs x and y coordinates")
+        elif action_type == "click_at" and ("x" not in filtered_params or "y" not in filtered_params):
+            logger.warning(f"Missing required parameters for '{action_type}': needs x and y coordinates")
+        elif action_type == "drag_to" and not all(p in filtered_params for p in ["start_x", "start_y", "end_x", "end_y"]):
+            logger.warning(f"Missing required parameters for '{action_type}': needs start and end coordinates")
+        elif action_type == "type_text" and "text" not in filtered_params:
+            logger.warning(f"Missing required parameter for '{action_type}': needs text")
+        elif action_type == "press_key" and "key" not in filtered_params and "key_combination" not in filtered_params:
+            logger.warning(f"Missing required parameter for '{action_type}': needs key or key_combination")
+        elif action_type == "scroll" and "clicks" not in filtered_params:
+            logger.warning(f"Missing required parameter for '{action_type}': needs clicks")
+            
+        logger.debug(f"Validated parameters for action '{action_type}': {filtered_params}")
+        return filtered_params 

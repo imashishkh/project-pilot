@@ -1,16 +1,18 @@
 # MacAgent - AI Agent for macOS
 
-MacAgent is a modular framework for creating AI agents that can interact with macOS through screen capture and mouse/keyboard control. It provides a clean architecture for building autonomous agents that can perform tasks on your Mac.
+MacAgent is a modular framework for creating AI agents that can interact with macOS through screen capture and mouse/keyboard control. It provides a clean architecture for building autonomous agents that can perform tasks on your Mac using natural language instructions.
 
 ## Features
 
 - **Screen Perception**: Capture and analyze screen content
-- **UI Interaction**: Control mouse and keyboard to interact with applications
+- **Robust UI Interaction**: Control mouse and keyboard with reliable parameter validation
+- **Intelligent Planning**: Break down complex tasks into manageable steps
 - **Memory System**: Store and retrieve state information
-- **Planning Module**: Generate and execute plans based on instructions
 - **Modular Architecture**: Clean separation of concerns for easy extension
 - **Interactive UI**: Chat interface to communicate with the agent
-- **Advanced NLP**: Optional integration with OpenAI or Anthropic for better natural language understanding
+- **Advanced NLP**: Integration with OpenAI or Anthropic for better natural language understanding
+- **Comprehensive Error Handling**: Graceful recovery from errors during execution
+- **Thorough Parameter Validation**: Smart filtering of parameters to ensure compatibility
 
 ## Installation
 
@@ -42,7 +44,7 @@ MacAgent is a modular framework for creating AI agents that can interact with ma
 
 ## Advanced Natural Language Processing
 
-MacAgent can optionally use OpenAI (GPT-4) or Anthropic (Claude) models to better understand natural language instructions. This significantly improves the agent's ability to handle complex requests.
+MacAgent uses advanced language models (OpenAI's GPT or Anthropic's Claude) to understand complex natural language instructions and extract relevant parameters for actions.
 
 To enable this feature:
 
@@ -51,9 +53,11 @@ To enable this feature:
 3. Or add your Anthropic API key: `"anthropic_api_key": "your-api-key-here"`
 
 With API keys configured, MacAgent will:
-- Better parse complex instructions
+- Parse complex instructions with high accuracy
 - Break multi-step instructions into logical steps
 - Handle ambiguous commands more intelligently
+- Extract and validate parameters for actions
+- Filter out invalid parameters to ensure reliable execution
 
 If no API keys are provided, MacAgent will fall back to basic rule-based parsing which works for simple commands.
 
@@ -66,12 +70,13 @@ MacAgent/
 │   │   ├── __init__.py    # Package initialization
 │   │   ├── agent.py       # Main agent loop and coordination
 │   │   ├── perception.py  # Screen capture and analysis
-│   │   ├── action.py      # Mouse and keyboard control
+│   │   ├── action.py      # Mouse and keyboard control with parameter filtering
 │   │   ├── planning.py    # Instruction processing and planning
+│   │   ├── task_manager.py # Task tracking and monitoring
 │   │   └── memory.py      # State storage and retrieval
 │   ├── intelligence/      # Language understanding with LLMs
 │   │   ├── llm_connector.py      # Connection to OpenAI/Anthropic
-│   │   └── instruction_processor.py # Natural language processing
+│   │   └── instruction_processor.py # Natural language processing with parameter validation
 │   ├── ui/                # User interface components
 │   │   ├── __init__.py    # UI package initialization
 │   │   ├── main_app.py    # Main application window
@@ -80,6 +85,8 @@ MacAgent/
 │   └── plugins/           # Optional plugins
 ├── config/                # Configuration files
 │   └── api_keys.json      # API keys for OpenAI/Anthropic
+├── tests/                 # Test suite
+│   └── test_integration.py # Integration tests for components
 ├── main.py                # Main entry point
 ├── requirements.txt       # Python dependencies
 └── README.md              # This file
@@ -97,18 +104,33 @@ python -m MacAgent.main
 
 ### Running in Command Line Mode
 
-You can also run MacAgent in command-line mode:
+You can run MacAgent in command-line mode for a text-based interface:
 
 ```bash
 python -m MacAgent.main --cli
 ```
 
+Example commands you can use:
+- "Take a screenshot of the desktop"
+- "Open Safari and go to google.com"
+- "Click on the Apple menu in the top left"
+- "Type 'Hello world' in the current application"
+- "Move the mouse to position x=500, y=300"
+
 ### Running the Demo Mode
 
-To run with the original demo mode (processes a predefined instruction):
+To run with the demo mode (processes a predefined instruction):
 
 ```bash
 python -m MacAgent.main --demo
+```
+
+### Loading a Configuration File
+
+You can specify a custom configuration file:
+
+```bash
+python -m MacAgent.main --config path/to/config.json
 ```
 
 ### Additional Options
@@ -125,46 +147,103 @@ Disable file logging:
 python -m MacAgent.main --no-file-log
 ```
 
-## Development
+## Development and Extension
 
-The agent is built with a modular architecture:
+MacAgent is designed with a modular architecture that makes it easy to extend:
 
-1. **Perception Module**: Captures screenshots and analyzes UI elements
-2. **Action Module**: Controls mouse and keyboard actions
-3. **Planning Module**: Processes instructions and generates plans
-4. **Memory System**: Stores observations and action history
-5. **Agent Loop**: Coordinates all the components
-6. **UI Components**: Provides user interface for interaction
+### Adding New Actions
 
-To extend the agent, you can:
-- Add new action handlers
-- Improve perception capabilities
-- Enhance planning strategies
-- Create plugins for specific applications
-- Customize the user interface
+1. Open `src/core/action.py`
+2. Add a new method to the `ActionModule` class
+3. Ensure it accepts appropriate parameters and uses the parameter filtering system
+
+Example of a custom action:
+```python
+async def my_custom_action(self, param1: str, param2: int = 0, **kwargs) -> bool:
+    """
+    Custom action that does something cool.
+    
+    Args:
+        param1: First parameter
+        param2: Second parameter with default value
+        
+    Returns:
+        True if successful, False otherwise
+    """
+    # The **kwargs parameter ensures compatibility with the parameter filtering system
+    
+    # Your implementation here
+    return True
+```
+
+### Enhancing the Instruction Processor
+
+1. Open `src/intelligence/instruction_processor.py`
+2. Modify the parameter schema in `_get_parameter_schema`
+3. Update the validation logic in `validate_action_parameters`
+
+### Implementing New UI Features
+
+1. Locate the UI components in `src/ui/`
+2. Modify the existing components or add new ones
+3. Update the main application to include your new features
+
+## Running Tests
+
+MacAgent includes a comprehensive test suite to verify that all components work correctly:
+
+```bash
+python -m unittest discover -s MacAgent/tests
+```
+
+To run a specific test file:
+
+```bash
+python -m MacAgent.tests.test_integration
+```
 
 ## Requirements
 
 - Python 3.8+
 - macOS (tested on Ventura and later)
 - PyQt5 (for the user interface)
-- Various Python packages (see requirements.txt)
+- pynput, pyautogui (for mouse and keyboard control)
+- asyncio (for asynchronous operations)
+- OpenAI or Anthropic API key (optional, for advanced language understanding)
 
 ## Troubleshooting
 
-If you encounter a "division by zero" error in the logs, this has been fixed in the latest version. Make sure you're running the latest code.
+### Common Issues
 
-If the UI doesn't appear when running the application, make sure you have PyQt5 installed:
+1. **Parameter Validation Errors**
+   
+   If you see warnings about unexpected parameters, this is normal. The parameter filtering system automatically removes invalid parameters. If you need to add support for a new parameter, update the `validate_action_parameters` method in the instruction processor.
 
-```bash
-pip install PyQt5>=5.15.9
-```
+2. **Task Execution Errors**
+   
+   If tasks fail to execute, check the logs for details. The new error handling system provides clear information about what went wrong.
 
-Or run the setup script:
+3. **UI Issues**
+   
+   If the UI doesn't appear when running the application, make sure you have PyQt5 installed:
 
-```bash
-python MacAgent/setup_ui.py
-```
+   ```bash
+   pip install PyQt5>=5.15.9
+   ```
+
+   Or run the setup script:
+
+   ```bash
+   python MacAgent/setup_ui.py
+   ```
+
+4. **Language Model Connection Issues**
+   
+   If you experience problems with language model connections, verify your API keys and internet connection. The application will fall back to basic parsing if API connections fail.
+
+5. **Asyncio Errors**
+   
+   If you see asyncio-related errors, make sure you're not mixing async and sync code without proper handling. The application uses asyncio for all operations.
 
 ## License
 
