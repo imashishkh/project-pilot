@@ -141,7 +141,7 @@ class ActionModule:
         
         logger.debug(message)
     
-    async def move_to(self, x: int, y: int, duration: Optional[float] = None) -> bool:
+    async def move_to(self, x: int, y: int, duration: Optional[float] = None, **kwargs) -> bool:
         """
         Move the mouse to the specified coordinates.
         
@@ -153,14 +153,20 @@ class ActionModule:
         Returns:
             True if successful, False otherwise
         """
-        params = {"x": x, "y": y, "duration": duration if duration is not None else self.move_speed}
+        params = {"x": x, "y": y, "duration": duration if duration is not None else self.move_speed, **kwargs}
+        
+        # Filter parameters to only include valid ones
+        filtered_params = await _filter_params(self.move_to, params)
         
         try:
             # Debug trace at start
             if self.debug_mode:
                 await self._debug_trace("move_to", params, None)
                 
-            move_duration = duration if duration is not None else self.move_speed
+            move_duration = filtered_params.get("duration", self.move_speed)
+            x = filtered_params["x"]
+            y = filtered_params["y"]
+            
             logger.debug(f"Moving mouse to ({x}, {y}) over {move_duration}s")
             
             # Use PyAutoGUI for smoother movement with duration
@@ -182,7 +188,8 @@ class ActionModule:
     async def click(self, 
                    button: str = "left", 
                    clicks: int = 1, 
-                   interval: Optional[float] = None) -> bool:
+                   interval: Optional[float] = None,
+                   **kwargs) -> bool:
         """
         Perform a mouse click at the current position.
         
@@ -194,14 +201,19 @@ class ActionModule:
         Returns:
             True if successful, False otherwise
         """
-        params = {"button": button, "clicks": clicks, "interval": interval if interval is not None else self.click_delay}
+        params = {"button": button, "clicks": clicks, "interval": interval if interval is not None else self.click_delay, **kwargs}
+        
+        # Filter parameters to only include valid ones
+        filtered_params = await _filter_params(self.click, params)
         
         try:
             # Debug trace at start
             if self.debug_mode:
                 await self._debug_trace("click", params, None)
                 
-            click_interval = interval if interval is not None else self.click_delay
+            click_interval = filtered_params.get("interval", self.click_delay)
+            button = filtered_params.get("button", "left")
+            clicks = filtered_params.get("clicks", 1)
             
             # Map string button name to pynput Button
             button_map = {
@@ -235,7 +247,8 @@ class ActionModule:
                       x: int, 
                       y: int, 
                       button: str = "left", 
-                      clicks: int = 1) -> bool:
+                      clicks: int = 1,
+                      **kwargs) -> bool:
         """
         Move to coordinates and perform a mouse click.
         
@@ -248,13 +261,21 @@ class ActionModule:
         Returns:
             True if successful, False otherwise
         """
-        params = {"x": x, "y": y, "button": button, "clicks": clicks}
+        params = {"x": x, "y": y, "button": button, "clicks": clicks, **kwargs}
+        
+        # Filter parameters to only include valid ones
+        filtered_params = await _filter_params(self.click_at, params)
         
         try:
             # Debug trace at start
             if self.debug_mode:
                 await self._debug_trace("click_at", params, None)
                 
+            x = filtered_params["x"]
+            y = filtered_params["y"]
+            button = filtered_params.get("button", "left")
+            clicks = filtered_params.get("clicks", 1)
+            
             move_result = await self.move_to(x, y)
             if not move_result:
                 # Debug trace for early return
@@ -285,7 +306,8 @@ class ActionModule:
                      start_y: int, 
                      end_x: int, 
                      end_y: int, 
-                     duration: Optional[float] = None) -> bool:
+                     duration: Optional[float] = None,
+                     **kwargs) -> bool:
         """
         Perform a drag operation from start to end coordinates.
         
@@ -304,15 +326,24 @@ class ActionModule:
             "start_y": start_y, 
             "end_x": end_x, 
             "end_y": end_y, 
-            "duration": duration if duration is not None else self.move_speed
+            "duration": duration if duration is not None else self.move_speed,
+            **kwargs
         }
+        
+        # Filter parameters to only include valid ones
+        filtered_params = await _filter_params(self.drag_to, params)
         
         try:
             # Debug trace at start
             if self.debug_mode:
                 await self._debug_trace("drag_to", params, None)
                 
-            drag_duration = duration if duration is not None else self.move_speed
+            start_x = filtered_params["start_x"]
+            start_y = filtered_params["start_y"]
+            end_x = filtered_params["end_x"]
+            end_y = filtered_params["end_y"]
+            drag_duration = filtered_params.get("duration", self.move_speed)
+            
             logger.debug(f"Dragging from ({start_x}, {start_y}) to ({end_x}, {end_y})")
             
             # Move to start position
@@ -335,7 +366,7 @@ class ActionModule:
             logger.error(f"Failed to drag: {str(e)}")
             return False
     
-    async def type_text(self, text: str, interval: Optional[float] = None) -> bool:
+    async def type_text(self, text: str, interval: Optional[float] = None, **kwargs) -> bool:
         """
         Type text at the current cursor position.
         
@@ -346,15 +377,19 @@ class ActionModule:
         Returns:
             True if successful, False otherwise
         """
-        params = {"text": text, "interval": interval if interval is not None else 0.01}
+        params = {"text": text, "interval": interval if interval is not None else 0.01, **kwargs}
+        
+        # Filter parameters to only include valid ones
+        filtered_params = await _filter_params(self.type_text, params)
         
         try:
             # Debug trace at start
             if self.debug_mode:
                 await self._debug_trace("type_text", params, None)
                 
+            text = filtered_params["text"]
             # Default interval is 0.01s between keystrokes
-            type_interval = interval if interval is not None else 0.01
+            type_interval = filtered_params.get("interval", 0.01)
             
             logger.debug(f"Typing text: {text[:10]}{'...' if len(text) > 10 else ''}")
             
@@ -374,7 +409,7 @@ class ActionModule:
             logger.error(f"Failed to type text: {str(e)}")
             return False
     
-    async def press_key(self, key: Union[str, Key] = None, modifiers: List[str] = None, key_combination: List[str] = None) -> bool:
+    async def press_key(self, key: Union[str, Key] = None, modifiers: List[str] = None, key_combination: List[str] = None, **kwargs) -> bool:
         """
         Press a keyboard key with optional modifiers.
         
@@ -386,13 +421,20 @@ class ActionModule:
         Returns:
             True if successful, False otherwise
         """
-        params = {"key": key, "modifiers": modifiers, "key_combination": key_combination}
+        params = {"key": key, "modifiers": modifiers, "key_combination": key_combination, **kwargs}
+        
+        # Filter parameters to only include valid ones
+        filtered_params = await _filter_params(self.press_key, params)
         
         try:
             # Debug trace at start
             if self.debug_mode:
                 await self._debug_trace("press_key", params, None)
                 
+            key = filtered_params.get("key")
+            modifiers = filtered_params.get("modifiers")
+            key_combination = filtered_params.get("key_combination")
+            
             # If key_combination is provided, extract the last key as the main key
             # and the rest as modifiers
             if key_combination and not key and not modifiers:
@@ -459,7 +501,7 @@ class ActionModule:
             logger.error(f"Failed to press key: {str(e)}")
             return False
     
-    async def perform_hotkey(self, *keys: str) -> bool:
+    async def perform_hotkey(self, *keys: str, **kwargs) -> bool:
         """
         Perform a hotkey combination.
         
@@ -469,13 +511,17 @@ class ActionModule:
         Returns:
             True if successful, False otherwise
         """
-        params = {"keys": keys}
+        params = {"keys": keys, **kwargs}
+        
+        # Filter parameters to only include valid ones
+        filtered_params = await _filter_params(self.perform_hotkey, params)
         
         try:
             # Debug trace at start
             if self.debug_mode:
                 await self._debug_trace("perform_hotkey", params, None)
                 
+            keys = filtered_params.get("keys", [])
             logger.debug(f"Performing hotkey: {keys}")
             pyautogui.hotkey(*keys)
             
@@ -492,7 +538,7 @@ class ActionModule:
             logger.error(f"Failed to perform hotkey: {str(e)}")
             return False
     
-    async def scroll(self, clicks: int) -> bool:
+    async def scroll(self, clicks: int, **kwargs) -> bool:
         """
         Scroll the mouse wheel.
         
@@ -502,13 +548,17 @@ class ActionModule:
         Returns:
             True if successful, False otherwise
         """
-        params = {"clicks": clicks}
+        params = {"clicks": clicks, **kwargs}
+        
+        # Filter parameters to only include valid ones
+        filtered_params = await _filter_params(self.scroll, params)
         
         try:
             # Debug trace at start
             if self.debug_mode:
                 await self._debug_trace("scroll", params, None)
                 
+            clicks = filtered_params["clicks"]
             logger.debug(f"Scrolling {clicks} clicks")
             pyautogui.scroll(clicks)
             

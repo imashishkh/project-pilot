@@ -11,6 +11,7 @@ import signal
 import time
 import traceback
 import os
+import random
 from typing import Dict, List, Optional, Any, Callable, Set, Union, Tuple
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -19,6 +20,7 @@ from .perception import PerceptionModule
 from .action import ActionModule
 from .planning import PlanningModule, Plan, PlanStatus, PlanStep
 from .memory import MemorySystem, AgentAction
+from .service_registry import ServiceRegistry
 
 # Configure logger
 logger = logging.getLogger(__name__)
@@ -112,33 +114,52 @@ class AgentLoop:
         # Set up logging
         self._configure_logging()
         
-        # Initialize component modules
+        # Initialize service registry
+        self._services = ServiceRegistry()
         logger.info("Initializing agent components...")
         
-        self.perception = PerceptionModule(
+        # Initialize perception module
+        perception = PerceptionModule(
             capture_region=self.config.capture_region,
             screenshot_interval=self.config.screenshot_interval
         )
+        self._services.register("perception", perception)
         
-        self.action = ActionModule(
+        # Initialize action module
+        action = ActionModule(
             move_speed=self.config.move_speed,
             click_delay=self.config.click_delay
         )
         
         # Enable debug mode for troubleshooting
-        self.action.set_debug_mode(True)
+        action.set_debug_mode(True)
         logger.info("Debug mode enabled for troubleshooting")
+        self._services.register("action", action)
         
-        self.planning = PlanningModule()
+        # Initialize planning module
+        planning = PlanningModule()
+        self._services.register("planning", planning)
         
+        # Initialize memory system
         memory_dir = self.config.memory_dir
         if memory_dir and not os.path.exists(memory_dir):
             os.makedirs(memory_dir, exist_ok=True)
             
-        self.memory = MemorySystem(
+        memory = MemorySystem(
             storage_dir=memory_dir,
             max_actions=self.config.max_actions
         )
+        self._services.register("memory", memory)
+        
+        # Add task manager
+        from MacAgent.src.core.task_manager import TaskManager
+        task_manager = TaskManager()
+        self._services.register("task_manager", task_manager)
+        
+        # Add feedback manager
+        from MacAgent.src.core.feedback_manager import FeedbackManager
+        feedback = FeedbackManager(verbose=True)
+        self._services.register("feedback", feedback)
         
         # State variables
         self.running: bool = False
@@ -171,7 +192,44 @@ class AgentLoop:
         # Register action handlers
         self._register_action_handlers()
         
+        # Define critical actions that require retry
+        self.critical_actions = {
+            'click', 'click_at', 'click_ui_element', 'type_text', 
+            'find_ui_element', 'press_key', 'hotkey', 'execute_plan'
+        }
+        
         logger.info("AgentLoop initialized successfully")
+    
+    # Property getters for backward compatibility
+    @property
+    def perception(self) -> PerceptionModule:
+        """Get the perception module."""
+        return self._services.get("perception")
+    
+    @property
+    def action(self) -> ActionModule:
+        """Get the action module."""
+        return self._services.get("action")
+    
+    @property
+    def planning(self) -> PlanningModule:
+        """Get the planning module."""
+        return self._services.get("planning")
+    
+    @property
+    def memory(self) -> MemorySystem:
+        """Get the memory system."""
+        return self._services.get("memory")
+    
+    @property
+    def task_manager(self):
+        """Get the task manager."""
+        return self._services.get("task_manager")
+    
+    @property
+    def feedback(self):
+        """Get the feedback manager."""
+        return self._services.get("feedback")
     
     def _configure_logging(self) -> None:
         """Configure the logging system."""
@@ -636,8 +694,15 @@ class AgentLoop:
             else:
                 context_enhanced_params = params.copy()
             
-            # Execute the action
-            result = await handler(**context_enhanced_params)
+            # Execute the action with retry for critical actions
+            if action_type in self.critical_actions:
+                # Get max retries from config or use default
+                max_retries = getattr(self.config, "action_max_retries", 3)
+                logger.debug(f"Using retry mechanism for critical action: {action_type}")
+                result = await self._execute_action_with_retry(action_type, context_enhanced_params, max_retries)
+            else:
+                # Execute the action directly for non-critical actions
+                result = await handler(**context_enhanced_params)
             
             # Record in history
             action_record = {
@@ -646,7 +711,8 @@ class AgentLoop:
                 "enhanced_params": context_enhanced_params,
                 "result": result,
                 "timestamp": time.time(),
-                "duration": time.time() - start_time
+                "duration": time.time() - start_time,
+                "is_critical": action_type in self.critical_actions
             }
             self.action_history.append(action_record)
             self.last_action_result = result
@@ -658,7 +724,12 @@ class AgentLoop:
             
         except Exception as e:
             logger.error(f"Error executing action {action_type}: {str(e)}")
-            self.last_action_result = {"success": False, "error": str(e)}
+            self.last_action_result = {
+                "success": False, 
+                "error": str(e),
+                "error_type": type(e).__name__,
+                "duration": time.time() - start_time
+            }
             return self.last_action_result
     
     def _enhance_params_with_context(self, action_type: str, params: Dict[str, Any]) -> Dict[str, Any]:
@@ -740,38 +811,104 @@ class AgentLoop:
     
     async def _handle_plan_step(self, step: PlanStep) -> Dict[str, Any]:
         """
-        Handle execution of a single plan step.
+        Handle execution of a single plan step with robust error handling.
         
         Args:
             step: The plan step to execute
             
         Returns:
-            Step execution result
+            Step execution result with detailed error information if applicable
         """
-        logger.info(f"Executing plan step: {step.description} [{step.action_type}]")
+        step_start_time = time.time()
+        step_id = id(step)
         
-        # Update the action context
-        await self._update_action_context()
+        logger.info(f"Executing plan step [{step_id}]: {step.description} ({step.action_type})")
         
-        # Execute the action with context
-        result = await self._execute_action_with_context(step.action_type, step.params)
-        
-        # Store the result in the step
-        step.result = result
-        
-        # Update the step status based on result
-        if result.get("success", False):
-            step.mark_completed()
-            logger.info(f"Step completed successfully: {step.description}")
-        else:
-            step.mark_failed(result.get("message", "Unknown error"))
-            logger.warning(f"Step failed: {step.description} - {result.get('message', 'Unknown error')}")
+        try:
+            # Mark step as in progress
+            step.mark_in_progress()
             
-            # Handle failure with dynamic replanning if enabled
-            if self.config.dynamic_replanning and self.current_plan:
-                await self._handle_step_failure(step, result)
-        
-        return result
+            # Update the action context
+            await self._update_action_context()
+            
+            # Execute the action with context
+            result = await self._execute_action_with_context(step.action_type, step.params)
+            
+            # Store the result in the step
+            step.result = result
+            
+            # Update the step status based on result
+            if result.get("success", False):
+                step.mark_completed()
+                logger.info(f"Step [{step_id}] completed successfully: {step.description}")
+            else:
+                error_message = result.get("message", result.get("error", "Unknown error"))
+                step.mark_failed(error_message)
+                logger.warning(f"Step [{step_id}] failed: {step.description} - {error_message}")
+                
+                # Handle failure with dynamic replanning if enabled
+                if self.config.dynamic_replanning and self.current_plan:
+                    await self._handle_step_failure(step, result)
+            
+            return result
+            
+        except asyncio.CancelledError:
+            # Handle cancellation explicitly
+            cancel_message = "Step execution was cancelled"
+            logger.warning(f"Step [{step_id}] cancelled: {step.description}")
+            
+            step.mark_cancelled(cancel_message)
+            result = {
+                "success": False,
+                "cancelled": True,
+                "message": cancel_message,
+                "time_elapsed": time.time() - step_start_time
+            }
+            step.result = result
+            
+            # Re-raise to properly propagate cancellation
+            raise
+            
+        except asyncio.TimeoutError:
+            # Handle timeout explicitly
+            timeout_message = "Step execution timed out"
+            logger.error(f"Step [{step_id}] timed out: {step.description}")
+            
+            step.mark_failed(timeout_message)
+            result = {
+                "success": False,
+                "timeout": True,
+                "message": timeout_message,
+                "time_elapsed": time.time() - step_start_time
+            }
+            step.result = result
+            return result
+            
+        except Exception as e:
+            # Handle general exceptions
+            error_message = f"Error executing step: {str(e)}"
+            logger.error(f"Step [{step_id}] failed with exception: {step.description} - {error_message}")
+            logger.debug(traceback.format_exc())
+            
+            step.mark_failed(error_message)
+            result = {
+                "success": False,
+                "error": str(e),
+                "error_type": type(e).__name__,
+                "message": error_message,
+                "time_elapsed": time.time() - step_start_time
+            }
+            step.result = result
+            return result
+            
+        finally:
+            # Always log step completion time
+            execution_time = time.time() - step_start_time
+            logger.debug(f"Step [{step_id}] execution took {execution_time:.3f} seconds")
+            
+            # Update plan status if we have a current plan
+            if self.current_plan:
+                self.current_plan.update_status()
     
     async def _handle_step_failure(self, failed_step: PlanStep, failure_result: Dict[str, Any]) -> None:
         """
@@ -821,36 +958,122 @@ class AgentLoop:
         except Exception as e:
             logger.error(f"Error in dynamic replanning: {str(e)}")
     
-    async def execute_planned_actions(self, instruction: str) -> Dict[str, Any]:
+    async def execute_planned_actions(self, plan: Optional[Plan] = None, instruction: Optional[str] = None) -> Dict[str, Any]:
         """
-        Create a plan from an instruction and execute it.
+        Create a plan from an instruction and execute it with feedback.
         
         Args:
-            instruction: The instruction to plan for
+            plan: Optional existing plan to execute
+            instruction: Optional instruction to create a plan if none provided
             
         Returns:
             Execution results
         """
         try:
-            # Create plan
-            logger.info(f"Creating plan for instruction: {instruction}")
-            plan = await self.planning.create_plan_from_instruction(instruction)
-            
-            if not plan:
+            # Create or use provided plan
+            if not plan and not instruction:
                 return {
                     "success": False,
-                    "message": "Failed to create plan"
+                    "message": "Either plan or instruction must be provided"
                 }
                 
+            # Use instruction as is or extract from plan
+            actual_instruction = instruction if instruction else plan.instruction
+            
+            # Start tracking execution using FeedbackManager
+            execution_id = self.feedback.start_execution(actual_instruction)
+            logger.info(f"Started execution tracking [{execution_id}] for: {actual_instruction}")
+            
+            if not plan:
+                # Create plan
+                logger.info(f"Creating plan for instruction: {actual_instruction}")
+                create_plan_step_id = self.feedback.add_step("Create plan from instruction", "plan_creation")
+                
+                plan = await self.planning.create_plan_from_instruction(actual_instruction)
+                
+                if not plan:
+                    # Update feedback and return error
+                    self.feedback.update_step(create_plan_step_id, "FAILED", {
+                        "success": False, 
+                        "error": "Failed to create plan"
+                    })
+                    self.feedback.complete_execution(False, {
+                        "success": False,
+                        "message": "Failed to create plan"
+                    })
+                    return {
+                        "success": False,
+                        "message": "Failed to create plan",
+                        "execution_id": execution_id
+                    }
+                else:
+                    self.feedback.update_step(create_plan_step_id, "COMPLETED", {
+                        "success": True,
+                        "plan_steps": len(plan.steps)
+                    })
+            
             # Store plan and start it
             self.current_plan = plan
             plan.mark_started()
             
-            # Execute each step
+            init_step_id = self.feedback.add_step("Initialize plan execution", "plan_initialization")
+            
+            # Create a unique task name for the execution
+            task_prefix = "plan_exec"
+            timestamp = int(time.time())
+            plan_task_name = f"{task_prefix}_{timestamp}"
+            
+            # Track overall results
             results = []
-            for step in plan.steps:
+            step_tasks = {}
+            step_ids = {}  # Map step to feedback step ID
+            
+            # Create tasks for each step
+            for i, step in enumerate(plan.steps):
                 if step.status == PlanStatus.PENDING:
-                    result = await self._handle_plan_step(step)
+                    # Add step to feedback manager
+                    feedback_step_id = self.feedback.add_step(
+                        step.description, 
+                        step.action_type
+                    )
+                    
+                    # Mark as in progress in feedback
+                    self.feedback.update_step(feedback_step_id, "IN_PROGRESS")
+                    
+                    # Create the task
+                    step_task_name = f"{plan_task_name}_step_{i}"
+                    step_task = await self.task_manager.create_task(
+                        step_task_name, 
+                        self._handle_plan_step(step)
+                    )
+                    
+                    # Store mappings
+                    step_tasks[step_task_name] = {"step": step, "task": step_task}
+                    step_ids[step_task_name] = feedback_step_id
+            
+            self.feedback.update_step(init_step_id, "COMPLETED", {
+                "success": True,
+                "tasks_created": len(step_tasks)
+            })
+            
+            # Execute tasks and collect results
+            cancelled_tasks = []
+            for step_task_name, task_info in step_tasks.items():
+                step = task_info["step"]
+                feedback_step_id = step_ids[step_task_name]
+                
+                try:
+                    # Wait for step completion with timeout (if configured)
+                    timeout = getattr(self.config, "step_timeout", 60)  # Default 60 seconds if not specified
+                    result = await self.task_manager.wait_for_task(step_task_name, timeout)
+                    
+                    # Update feedback status based on result
+                    if result.get("success", False):
+                        self.feedback.update_step(feedback_step_id, "COMPLETED", result)
+                    else:
+                        self.feedback.update_step(feedback_step_id, "FAILED", result)
+                    
+                    # Add to results
                     results.append({
                         "step": step.description,
                         "action_type": step.action_type,
@@ -860,26 +1083,126 @@ class AgentLoop:
                     
                     # Break on failure if dynamic replanning is disabled
                     if not result.get("success", False) and not self.config.dynamic_replanning:
+                        # Cancel remaining tasks
+                        for remaining_task_name in [name for name in step_tasks.keys() 
+                                                   if name not in cancelled_tasks and 
+                                                   name != step_task_name]:
+                            # Update feedback for cancelled steps
+                            self.feedback.update_step(step_ids[remaining_task_name], "CANCELLED", {
+                                "success": False,
+                                "cancelled": True,
+                                "message": "Cancelled due to prior step failure"
+                            })
+                            
+                            # Cancel task
+                            self.task_manager.cancel_task(remaining_task_name)
+                            cancelled_tasks.append(remaining_task_name)
+                        break
+                        
+                except asyncio.TimeoutError:
+                    # Handle timeout
+                    timeout_result = {
+                        "success": False, 
+                        "timeout": True, 
+                        "error": f"Execution timed out after {timeout} seconds"
+                    }
+                    
+                    # Update feedback
+                    self.feedback.update_step(feedback_step_id, "TIMEOUT", timeout_result)
+                    
+                    logger.warning(f"Timeout while executing step: {step.description}")
+                    step.mark_failed(f"Execution timed out after {timeout} seconds")
+                    
+                    results.append({
+                        "step": step.description,
+                        "action_type": step.action_type,
+                        "success": False,
+                        "result": timeout_result
+                    })
+                    
+                    # Cancel the task
+                    self.task_manager.cancel_task(step_task_name)
+                    cancelled_tasks.append(step_task_name)
+                    
+                    # Break if dynamic replanning disabled
+                    if not self.config.dynamic_replanning:
+                        break
+                        
+                except Exception as e:
+                    # Handle other exceptions
+                    error_result = {
+                        "success": False,
+                        "error": str(e),
+                        "error_type": type(e).__name__
+                    }
+                    
+                    # Update feedback
+                    self.feedback.update_step(feedback_step_id, "FAILED", error_result)
+                    
+                    logger.error(f"Error executing step {step.description}: {str(e)}")
+                    step.mark_failed(f"Execution error: {str(e)}")
+                    
+                    results.append({
+                        "step": step.description,
+                        "action_type": step.action_type,
+                        "success": False,
+                        "result": error_result
+                    })
+                    
+                    # Cancel the task
+                    if step_task_name not in cancelled_tasks:
+                        try:
+                            self.task_manager.cancel_task(step_task_name)
+                            cancelled_tasks.append(step_task_name)
+                        except Exception:
+                            pass
+                    
+                    # Break if dynamic replanning disabled
+                    if not self.config.dynamic_replanning:
                         break
             
             # Update plan status
             plan.update_status()
             
-            # Return execution summary
-            return {
-                "success": plan.status == PlanStatus.COMPLETED,
+            # Determine overall success
+            success = plan.status == PlanStatus.COMPLETED
+            
+            # Create execution summary
+            execution_summary = {
+                "success": success,
+                "execution_id": execution_id,
                 "plan_status": plan.status.name,
-                "instruction": instruction,
+                "instruction": plan.instruction,
                 "steps_total": len(plan.steps),
                 "steps_completed": len([s for s in plan.steps if s.status == PlanStatus.COMPLETED]),
                 "steps_failed": len([s for s in plan.steps if s.status == PlanStatus.FAILED]),
+                "cancelled_tasks": len(cancelled_tasks),
                 "results": results
             }
+            
+            # Complete execution in feedback manager
+            self.feedback.complete_execution(success, execution_summary)
+            
+            # Return execution summary
+            return execution_summary
                 
         except Exception as e:
+            # If we have started feedback tracking, complete it with error
+            if 'execution_id' in locals():
+                error_result = {
+                    "success": False,
+                    "error": str(e),
+                    "error_type": type(e).__name__
+                }
+                self.feedback.complete_execution(False, error_result)
+            
             logger.error(f"Error executing planned actions: {str(e)}")
             logger.debug(traceback.format_exc())
-            return {"success": False, "error": str(e)}
+            return {
+                "success": False, 
+                "error": str(e),
+                "execution_id": locals().get('execution_id')
+            }
     
     async def _run_single_tick(self) -> None:
         """Run a single tick of the agent loop."""
@@ -1130,29 +1453,84 @@ class AgentLoop:
             self.running = False
             logger.info("Agent loop shutdown complete")
     
-    async def start_with_timeout(self, timeout: Optional[float] = None) -> None:
+    async def start_and_wait(self, timeout: Optional[float] = None) -> bool:
         """
-        Start the agent loop with an optional timeout.
+        Start the agent loop and wait for it to complete or timeout.
         
         Args:
-            timeout: Optional timeout in seconds after which to stop the agent
+            timeout: Optional timeout in seconds
+            
+        Returns:
+            True if completed successfully, False if timed out or error occurred
+            
+        Raises:
+            RuntimeError: If the agent is already running
         """
+        if self.running:
+            raise RuntimeError("Agent loop is already running")
+            
         try:
+            # Start the task
+            logger.info(f"Starting agent loop{f' with {timeout}s timeout' if timeout else ''}")
+            
+            self.running = True
+            self._shutdown_requested = False
+            
             if timeout is not None:
-                # Start the agent loop with a timeout
-                logger.info(f"Starting agent loop with {timeout}s timeout")
+                # Start with timeout
                 await asyncio.wait_for(self.run(), timeout)
             else:
                 # Start without timeout
                 await self.run()
+                
+            logger.info("Agent loop completed successfully")
+            return True
+            
         except asyncio.TimeoutError:
-            logger.info(f"Agent loop timed out after {timeout}s")
+            logger.warning(f"Agent loop timed out after {timeout}s")
+            # Ensure the agent stops
             self.stop()
+            return False
+            
+        except asyncio.CancelledError:
+            logger.info("Agent loop was cancelled")
+            self.stop()
+            raise
+            
+        except Exception as e:
+            logger.error(f"Error in agent loop: {str(e)}")
+            logger.debug(traceback.format_exc())
+            # Ensure the agent stops
+            self.stop()
+            return False
+            
+        finally:
+            # Update running status
+            self.running = False
     
-    def start(self) -> None:
-        """Start the agent loop in the current event loop."""
-        asyncio.create_task(self.run())
+    def start(self) -> asyncio.Task:
+        """
+        Start the agent loop in the current event loop.
+        
+        Returns:
+            The created asyncio task
+            
+        Raises:
+            RuntimeError: If the agent is already running
+        """
+        if self.running:
+            raise RuntimeError("Agent loop is already running")
+            
+        # Create task and set the running flag
+        self.running = True
+        self._shutdown_requested = False
+        task = asyncio.create_task(self.run(), name="MacAgent_Loop")
+        
+        # Add done callback to update running status when complete
+        task.add_done_callback(lambda _: setattr(self, 'running', False))
+        
         logger.info("Agent loop started in background task")
+        return task
     
     def stop(self) -> None:
         """Request the agent loop to stop."""
@@ -1254,3 +1632,147 @@ class AgentLoop:
         except Exception as e:
             logger.error(f"Error during wait: {str(e)}")
             return {"success": False, "error": str(e)}
+
+    async def _execute_action_with_retry(self, action_type: str, params: Dict[str, Any], max_retries: int = 3) -> Dict[str, Any]:
+        """
+        Execute an action with retry mechanism.
+        
+        Args:
+            action_type: Type of action to execute
+            params: Action parameters
+            max_retries: Maximum number of retry attempts
+            
+        Returns:
+            Action result dictionary
+        """
+        retry_count = 0
+        last_error = None
+        base_delay = 1.0  # Base delay in seconds
+        
+        logger.info(f"Executing action '{action_type}' with up to {max_retries} retries")
+        
+        while retry_count <= max_retries:
+            try:
+                # On first attempt, don't call it a retry
+                attempt_desc = "initial attempt" if retry_count == 0 else f"retry attempt {retry_count}"
+                logger.debug(f"Action '{action_type}' {attempt_desc}")
+                
+                # Execute the action with context
+                result = await self._execute_action_with_context(action_type, params)
+                
+                # If successful, return immediately
+                if result.get("success", False):
+                    if retry_count > 0:
+                        logger.info(f"Action '{action_type}' succeeded after {retry_count} retries")
+                    return result
+                
+                # If this is the last attempt, return the failed result
+                if retry_count >= max_retries:
+                    logger.warning(f"Action '{action_type}' failed after {retry_count} retries. Last error: {result.get('message', 'Unknown error')}")
+                    # Add retry information to result
+                    result["retries_attempted"] = retry_count
+                    result["retries_exhausted"] = True
+                    return result
+                
+                # Otherwise, prepare for retry
+                error_message = result.get("message", result.get("error", "Unknown error"))
+                logger.warning(f"Action '{action_type}' failed (attempt {retry_count+1}/{max_retries+1}): {error_message}")
+                last_error = error_message
+                
+                # Increment retry counter
+                retry_count += 1
+                
+                # Exponential backoff with jitter
+                delay = base_delay * (1.5 ** retry_count) + (random.random() * 0.5)
+                logger.debug(f"Waiting {delay:.2f}s before retry...")
+                await asyncio.sleep(delay)
+                
+            except asyncio.CancelledError:
+                logger.warning(f"Action '{action_type}' cancelled during {attempt_desc}")
+                raise
+                
+            except Exception as e:
+                # If this is the last attempt, raise the exception
+                if retry_count >= max_retries:
+                    logger.error(f"Action '{action_type}' failed with exception after {retry_count} retries: {str(e)}")
+                    raise
+                
+                # Otherwise, log and prepare for retry
+                logger.error(f"Action '{action_type}' failed with exception (attempt {retry_count+1}/{max_retries+1}): {str(e)}")
+                last_error = str(e)
+                
+                # Increment retry counter
+                retry_count += 1
+                
+                # Exponential backoff with jitter
+                delay = base_delay * (1.5 ** retry_count) + (random.random() * 0.5)
+                logger.debug(f"Waiting {delay:.2f}s before retry...")
+                await asyncio.sleep(delay)
+        
+        # This code should not be reached but is here for safety
+        return {
+            "success": False,
+            "message": f"Action failed after {max_retries} retries. Last error: {last_error}",
+            "retries_attempted": max_retries,
+            "retries_exhausted": True,
+            "last_error": last_error
+        }
+
+    async def wait_for_completion(self, timeout: Optional[float] = None) -> bool:
+        """
+        Wait for the agent to complete its current tasks.
+        
+        Args:
+            timeout: Optional timeout in seconds
+            
+        Returns:
+            True if completed successfully, False if timed out
+        """
+        # If agent is not running, nothing to wait for
+        if not self.running:
+            logger.info("Agent is not running, nothing to wait for")
+            return True
+        
+        # If no current plan, nothing to wait for
+        if not self.current_plan:
+            logger.info("No current plan, nothing to wait for")
+            return True
+            
+        start_time = time.time()
+        check_interval = 0.1  # Check status every 100ms
+        
+        try:
+            logger.info(f"Waiting for current plan to complete: {self.current_plan.instruction}")
+            
+            while True:
+                # Check if we've exceeded the timeout
+                if timeout is not None and (time.time() - start_time) > timeout:
+                    logger.warning(f"Timeout waiting for plan completion after {timeout}s")
+                    return False
+                
+                # Check if the plan has reached a terminal state
+                if not self.current_plan:
+                    logger.info("Plan completed (no current plan)")
+                    return True
+                    
+                if self.current_plan.status in [PlanStatus.COMPLETED, PlanStatus.FAILED, PlanStatus.CANCELLED]:
+                    success = self.current_plan.status == PlanStatus.COMPLETED
+                    logger.info(f"Plan {self.current_plan.status.name.lower()} with status: {success}")
+                    return success
+                
+                # Check if the agent is still running
+                if not self.running or self._shutdown_requested:
+                    logger.warning("Agent is no longer running while waiting for plan completion")
+                    return False
+                
+                # Wait a bit before checking again
+                await asyncio.sleep(check_interval)
+                
+        except asyncio.CancelledError:
+            logger.warning("Wait for completion was cancelled")
+            raise
+            
+        except Exception as e:
+            logger.error(f"Error while waiting for plan completion: {str(e)}")
+            logger.debug(traceback.format_exc())
+            return False
