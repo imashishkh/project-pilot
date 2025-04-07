@@ -73,6 +73,32 @@ class PerceptionModule:
             # Return a black image if no previous screenshot available
             return np.zeros((100, 100, 3), dtype=np.uint8)
     
+    async def initialize(self) -> None:
+        """
+        Initialize the perception module.
+        Called by the AgentLoop during startup.
+        """
+        logger.debug("Initializing perception module...")
+        # Reset the screenshot timing
+        self.last_capture_time = 0.0
+        # Take an initial screenshot to verify capture works
+        try:
+            await self.capture_screen()
+            logger.info("Successfully captured initial screenshot")
+        except Exception as e:
+            logger.error(f"Error capturing initial screenshot: {str(e)}")
+        logger.debug("Perception module initialization complete")
+        
+    async def cleanup(self) -> None:
+        """
+        Clean up perception module resources.
+        Called by the AgentLoop during shutdown.
+        """
+        logger.debug("Cleaning up perception module resources...")
+        # Release any resources if needed
+        self.current_screenshot = None
+        logger.debug("Perception module cleanup complete")
+    
     async def get_ui_elements(self) -> List[Dict[str, Any]]:
         """
         Identify UI elements in the current screenshot.

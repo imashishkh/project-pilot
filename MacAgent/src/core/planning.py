@@ -64,6 +64,13 @@ class PlanStep:
         self.start_time = time.time()
         logger.debug(f"Started step {self.step_id}: {self.description}")
     
+    def mark_in_progress(self) -> None:
+        """
+        Mark this step as in progress.
+        This is an alias for mark_started() for backward compatibility.
+        """
+        self.mark_started()
+    
     def mark_completed(self, result: Any = None) -> None:
         """Mark this step as completed."""
         self.status = PlanStatus.COMPLETED
@@ -79,6 +86,14 @@ class PlanStep:
         self.end_time = time.time()
         duration = self.end_time - (self.start_time or self.end_time)
         logger.error(f"Failed step {self.step_id} after {duration:.2f}s: {self.description} - {error}")
+    
+    def mark_cancelled(self, reason: str = "Cancelled by user") -> None:
+        """Mark this step as cancelled."""
+        self.status = PlanStatus.CANCELLED
+        self.error = reason
+        self.end_time = time.time()
+        duration = self.end_time - (self.start_time or self.end_time)
+        logger.warning(f"Cancelled step {self.step_id} after {duration:.2f}s: {self.description} - {reason}")
 
     def is_complete(self) -> bool:
         """Check if this step is complete."""
@@ -578,9 +593,18 @@ class PlanningModule:
             logger.warning(f"Attempting to execute step {step.step_id} with status {step.status}")
             return
         
-        step.mark_started()
-        
         try:
+            # Ensure step has started state
+            if hasattr(step, 'mark_started'):
+                step.mark_started()
+            elif hasattr(step, 'mark_in_progress'):
+                step.mark_in_progress()
+            else:
+                # Fallback for older step objects without state methods
+                step.status = PlanStatus.IN_PROGRESS
+                step.start_time = time.time()
+                logger.debug(f"Started step {step.step_id} using fallback method")
+            
             handler = self.action_handlers.get(step.action_type)
             if handler:
                 # Filter parameters to match handler's signature
@@ -593,11 +617,56 @@ class PlanningModule:
                 
                 # Call handler with filtered parameters
                 result = await handler(**filtered_params)
-                step.mark_completed(result)
+                
+                # Ensure step is marked as completed
+                if hasattr(step, 'mark_completed'):
+                    step.mark_completed(result)
+                else:
+                    # Fallback for older step objects
+                    step.status = PlanStatus.COMPLETED
+                    step.result = result
+                    step.end_time = time.time()
+                    logger.debug(f"Completed step {step.step_id} using fallback method")
             else:
-                step.mark_failed(f"No handler registered for action type: {step.action_type}")
+                error_msg = f"No handler registered for action type: {step.action_type}"
+                if hasattr(step, 'mark_failed'):
+                    step.mark_failed(error_msg)
+                else:
+                    # Fallback for older step objects
+                    step.status = PlanStatus.FAILED
+                    step.error = error_msg
+                    step.end_time = time.time()
+                    logger.error(f"Failed step {step.step_id} using fallback method: {error_msg}")
+        except AttributeError as e:
+            logger.error(f"AttributeError in step execution: {str(e)}")
+            # Provide detailed debugging information
+            logger.debug(f"Step object attributes: {dir(step)}")
+            logger.debug(f"Step type: {type(step)}")
+            
+            # Apply fallback error handling
+            try:
+                if hasattr(step, 'mark_failed'):
+                    step.mark_failed(f"AttributeError: {str(e)}")
+                else:
+                    step.status = PlanStatus.FAILED
+                    step.error = f"AttributeError: {str(e)}"
+                    step.end_time = time.time()
+            except Exception as inner_e:
+                logger.error(f"Failed to mark step as failed: {str(inner_e)}")
         except Exception as e:
-            step.mark_failed(f"Error executing step: {str(e)}")
+            error_msg = f"Error executing step: {str(e)}"
+            logger.error(error_msg)
+            
+            try:
+                if hasattr(step, 'mark_failed'):
+                    step.mark_failed(error_msg)
+                else:
+                    # Fallback for older step objects
+                    step.status = PlanStatus.FAILED
+                    step.error = error_msg
+                    step.end_time = time.time()
+            except Exception as inner_e:
+                logger.error(f"Failed to mark step as failed: {str(inner_e)}")
     
     async def execute_plan(self, plan: Plan) -> None:
         """

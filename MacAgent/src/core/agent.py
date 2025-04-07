@@ -15,6 +15,7 @@ import random
 from typing import Dict, List, Optional, Any, Callable, Set, Union, Tuple
 from dataclasses import dataclass, field
 from datetime import datetime
+from pathlib import Path
 
 from .perception import PerceptionModule
 from .action import ActionModule
@@ -826,7 +827,20 @@ class AgentLoop:
         
         try:
             # Mark step as in progress
-            step.mark_in_progress()
+            try:
+                # Use the appropriate method based on what's available
+                if hasattr(step, 'mark_in_progress'):
+                    step.mark_in_progress()
+                elif hasattr(step, 'mark_started'):
+                    step.mark_started()
+                else:
+                    # Fallback if neither method exists
+                    logger.warning(f"Step [{step_id}] missing state management methods, setting status directly")
+                    step.status = PlanStatus.IN_PROGRESS
+                    step.start_time = time.time()
+            except Exception as state_error:
+                logger.error(f"Error marking step as in progress: {str(state_error)}")
+                # Continue with execution despite the state transition error
             
             # Update the action context
             await self._update_action_context()
@@ -839,11 +853,26 @@ class AgentLoop:
             
             # Update the step status based on result
             if result.get("success", False):
-                step.mark_completed()
+                try:
+                    if hasattr(step, 'mark_completed'):
+                        step.mark_completed()
+                    else:
+                        step.status = PlanStatus.COMPLETED
+                        step.end_time = time.time()
+                except Exception as complete_error:
+                    logger.error(f"Error marking step as completed: {str(complete_error)}")
                 logger.info(f"Step [{step_id}] completed successfully: {step.description}")
             else:
                 error_message = result.get("message", result.get("error", "Unknown error"))
-                step.mark_failed(error_message)
+                try:
+                    if hasattr(step, 'mark_failed'):
+                        step.mark_failed(error_message)
+                    else:
+                        step.status = PlanStatus.FAILED
+                        step.error = error_message
+                        step.end_time = time.time()
+                except Exception as fail_error:
+                    logger.error(f"Error marking step as failed: {str(fail_error)}")
                 logger.warning(f"Step [{step_id}] failed: {step.description} - {error_message}")
                 
                 # Handle failure with dynamic replanning if enabled
@@ -851,13 +880,22 @@ class AgentLoop:
                     await self._handle_step_failure(step, result)
             
             return result
-            
+        
         except asyncio.CancelledError:
             # Handle cancellation explicitly
             cancel_message = "Step execution was cancelled"
             logger.warning(f"Step [{step_id}] cancelled: {step.description}")
             
-            step.mark_cancelled(cancel_message)
+            try:
+                if hasattr(step, 'mark_cancelled'):
+                    step.mark_cancelled(cancel_message)
+                else:
+                    step.status = PlanStatus.CANCELLED
+                    step.error = cancel_message
+                    step.end_time = time.time()
+            except Exception as cancel_error:
+                logger.error(f"Error marking step as cancelled: {str(cancel_error)}")
+            
             result = {
                 "success": False,
                 "cancelled": True,
@@ -874,7 +912,16 @@ class AgentLoop:
             timeout_message = "Step execution timed out"
             logger.error(f"Step [{step_id}] timed out: {step.description}")
             
-            step.mark_failed(timeout_message)
+            try:
+                if hasattr(step, 'mark_failed'):
+                    step.mark_failed(timeout_message)
+                else:
+                    step.status = PlanStatus.FAILED
+                    step.error = timeout_message
+                    step.end_time = time.time()
+            except Exception as timeout_error:
+                logger.error(f"Error marking step as failed on timeout: {str(timeout_error)}")
+            
             result = {
                 "success": False,
                 "timeout": True,
@@ -888,19 +935,26 @@ class AgentLoop:
             # Handle general exceptions
             error_message = f"Error executing step: {str(e)}"
             logger.error(f"Step [{step_id}] failed with exception: {step.description} - {error_message}")
-            logger.debug(traceback.format_exc())
             
-            step.mark_failed(error_message)
-            result = {
+            # Try to mark as failed
+            try:
+                if hasattr(step, 'mark_failed'):
+                    step.mark_failed(f"Unhandled exception: {str(e)}")
+                else:
+                    step.status = PlanStatus.FAILED
+                    step.error = f"Unhandled exception: {str(e)}"
+                    step.end_time = time.time()
+            except Exception as mark_error:
+                logger.error(f"Error marking step as failed: {str(mark_error)}")
+                
+            return {
                 "success": False,
                 "error": str(e),
                 "error_type": type(e).__name__,
                 "message": error_message,
                 "time_elapsed": time.time() - step_start_time
             }
-            step.result = result
-            return result
-            
+        
         finally:
             # Always log step completion time
             execution_time = time.time() - step_start_time
@@ -1562,6 +1616,146 @@ class AgentLoop:
             self.current_plan = None
             return True
         return False
+    
+    async def initialize(self) -> None:
+        """
+        Initialize the agent loop resources.
+        This method is called before running the agent to set up any necessary resources.
+        """
+        logger.info("Initializing agent resources...")
+        
+        # Initialize perception
+        perception = self._services.get("perception")
+        if perception:
+            await perception.initialize()
+            
+        # Initialize memory
+        memory = self._services.get("memory")
+        if memory:
+            # Look for the most recent memory file or use a default name
+            if self.config.memory_dir:
+                memory_dir = Path(self.config.memory_dir)
+                memory_files = list(memory_dir.glob("memory_state_*.json"))
+                if memory_files:
+                    # Sort by modification time, newest first
+                    newest_file = max(memory_files, key=lambda f: f.stat().st_mtime)
+                    memory_filename = newest_file.name
+                    await asyncio.to_thread(memory.load_from_disk, memory_filename)
+                    logger.info(f"Loaded memory from {memory_filename}")
+                else:
+                    # No existing memory files
+                    logger.info("No previous memory state found")
+            
+        # Initialize task manager
+        task_manager = self._services.get("task_manager")
+        if task_manager:
+            task_manager.reset()
+        
+        # Reset state variables
+        self.running = False
+        self.paused = False
+        self.current_plan = None
+        self._shutdown_requested = False
+        self.tick_count = 0
+        
+        # Clear performance metrics
+        self.perf_stats = {
+            'loop_time': [],
+            'perception_time': [],
+            'planning_time': [],
+            'action_time': [],
+            'memory_time': [],
+            'ui_detection_time': [],
+        }
+        
+        logger.info("Agent resources initialized")
+    
+    async def cleanup(self) -> None:
+        """
+        Clean up agent resources.
+        This method is called after the agent is stopped to release any resources.
+        """
+        logger.info("Cleaning up agent resources...")
+        
+        # Cancel any running plan
+        if self.current_plan and self.current_plan.status == PlanStatus.IN_PROGRESS:
+            self.cancel_current_plan()
+        
+        # Save final memory state
+        if self.config.memory_dir:
+            memory = self._services.get("memory")
+            if memory:
+                await asyncio.to_thread(memory.save_to_disk, "final_state.json")
+        
+        # Clean up perception resources
+        perception = self._services.get("perception")
+        if perception:
+            await perception.cleanup()
+        
+        # Update state
+        self.running = False
+        self._shutdown_requested = True
+        
+        logger.info("Agent resources cleaned up")
+    
+    async def wait_for_completion(self, timeout: Optional[float] = None) -> bool:
+        """
+        Wait for the agent to complete its current tasks.
+        
+        Args:
+            timeout: Optional timeout in seconds
+            
+        Returns:
+            True if completed successfully, False if timed out
+        """
+        # If agent is not running, nothing to wait for
+        if not self.running:
+            logger.info("Agent is not running, nothing to wait for")
+            return True
+        
+        # If no current plan, nothing to wait for
+        if not self.current_plan:
+            logger.info("No current plan, nothing to wait for")
+            return True
+            
+        start_time = time.time()
+        check_interval = 0.1  # Check status every 100ms
+        
+        try:
+            logger.info(f"Waiting for current plan to complete: {self.current_plan.instruction}")
+            
+            while True:
+                # Check if we've exceeded the timeout
+                if timeout is not None and (time.time() - start_time) > timeout:
+                    logger.warning(f"Timeout waiting for plan completion after {timeout}s")
+                    return False
+                
+                # Check if the plan has reached a terminal state
+                if not self.current_plan:
+                    logger.info("Plan completed (no current plan)")
+                    return True
+                    
+                if self.current_plan.status in [PlanStatus.COMPLETED, PlanStatus.FAILED, PlanStatus.CANCELLED]:
+                    success = self.current_plan.status == PlanStatus.COMPLETED
+                    logger.info(f"Plan {self.current_plan.status.name.lower()} with status: {success}")
+                    return success
+                
+                # Check if the agent is still running
+                if not self.running or self._shutdown_requested:
+                    logger.warning("Agent is no longer running while waiting for plan completion")
+                    return False
+                
+                # Wait a bit before checking again
+                await asyncio.sleep(check_interval)
+                
+        except asyncio.CancelledError:
+            logger.warning("Wait for completion was cancelled")
+            raise
+            
+        except Exception as e:
+            logger.error(f"Error while waiting for plan completion: {str(e)}")
+            logger.debug(traceback.format_exc())
+            return False
 
     async def find_and_click_element(self, element_type: str = None, text: str = None) -> Dict[str, Any]:
         """
@@ -1717,62 +1911,3 @@ class AgentLoop:
             "retries_exhausted": True,
             "last_error": last_error
         }
-
-    async def wait_for_completion(self, timeout: Optional[float] = None) -> bool:
-        """
-        Wait for the agent to complete its current tasks.
-        
-        Args:
-            timeout: Optional timeout in seconds
-            
-        Returns:
-            True if completed successfully, False if timed out
-        """
-        # If agent is not running, nothing to wait for
-        if not self.running:
-            logger.info("Agent is not running, nothing to wait for")
-            return True
-        
-        # If no current plan, nothing to wait for
-        if not self.current_plan:
-            logger.info("No current plan, nothing to wait for")
-            return True
-            
-        start_time = time.time()
-        check_interval = 0.1  # Check status every 100ms
-        
-        try:
-            logger.info(f"Waiting for current plan to complete: {self.current_plan.instruction}")
-            
-            while True:
-                # Check if we've exceeded the timeout
-                if timeout is not None and (time.time() - start_time) > timeout:
-                    logger.warning(f"Timeout waiting for plan completion after {timeout}s")
-                    return False
-                
-                # Check if the plan has reached a terminal state
-                if not self.current_plan:
-                    logger.info("Plan completed (no current plan)")
-                    return True
-                    
-                if self.current_plan.status in [PlanStatus.COMPLETED, PlanStatus.FAILED, PlanStatus.CANCELLED]:
-                    success = self.current_plan.status == PlanStatus.COMPLETED
-                    logger.info(f"Plan {self.current_plan.status.name.lower()} with status: {success}")
-                    return success
-                
-                # Check if the agent is still running
-                if not self.running or self._shutdown_requested:
-                    logger.warning("Agent is no longer running while waiting for plan completion")
-                    return False
-                
-                # Wait a bit before checking again
-                await asyncio.sleep(check_interval)
-                
-        except asyncio.CancelledError:
-            logger.warning("Wait for completion was cancelled")
-            raise
-            
-        except Exception as e:
-            logger.error(f"Error while waiting for plan completion: {str(e)}")
-            logger.debug(traceback.format_exc())
-            return False

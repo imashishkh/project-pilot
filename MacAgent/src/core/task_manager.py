@@ -230,3 +230,18 @@ class TaskManager:
             logger.debug(f"Cancelled {len(cancelled)} tasks")
         
         return cancelled
+    
+    def reset(self) -> None:
+        """
+        Reset the task manager by cancelling all tasks and clearing task tracking.
+        """
+        # Cancel any running tasks first
+        self.cancel_all_tasks()
+        
+        # Clear all tracking dictionaries
+        self._tasks.clear()
+        self._results.clear()
+        self._statuses.clear()
+        self._exceptions.clear()
+        
+        logger.debug("TaskManager reset complete")
